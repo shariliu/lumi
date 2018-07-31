@@ -1,0 +1,967 @@
+
+---
+title: "Pre-reaching infants expect causal agents to reach efficiently" 
+author: "Shari Liu"
+date: Sys.Date()
+output: html_document
+---
+
+**Table 1.** Summary of conditions, design, and sample sizes of Experiments 1-5, and SCS Experiments 1-5. Conditions listed under a single experiment (e.g. Exp 1 and 3) included random assignment to condition. For stimuli, see Fig 1. * indicates direct replications.
+
+Experiment | N | Training |  Goal | Habituation | Causal | Mitten | Stimuli
+---------- | - | ---------| ----- | ----------- | ------ | ------ | -------
+1 | 20 | none | state change | constrained | yes | yes | H1, T1
+1 | 20 | none | state change | unconstrained | yes | yes | H2, T1
+2 | 20 | none | state change | constrained | no | yes | H3, T2
+3* | 26 | none |  state change | constrained | yes | yes | H1, T1
+3* | 26 | none | state change | constrained | no | yes | H3, T2
+4 | 20 | none | pick up | constrained | yes | yes | H4, T3
+5 | 20 | none | pick up | constrained | yes | no | H5, T4
+SCS 1 | 20 | effective | pick up | constrained | yes | yes |
+SCS 2 | 20 | ineffective | pick up | constrained | yes | yes |
+SCS 3 | 20 | none | pick up | constrained | yes | yes |
+SCS 4* | 26 | effective | pick up | constrained | yes | yes |
+SCS 5 | 26 | effective | pick up |unconstrained | yes | yes |
+
+![**Figure 1.** Still frames from videos shown to participants in Experiments 1-5, including stimuli from habituation (H1-H5) and test (T1-T4). In each video, a person reached for and caused a change in an object (H1-H3, T1-T2), or picked up the object (H4-H5, T3-T4), over a barrier (H1- H2, H4-H5) or over empty space (H2, T1-T4), and either acted on the object by contacting it (H1-H2, H4-H5, T1, T3-T4) or produced the same effect from a distance of 50 pixels, after a 0.5s delay (H3, T2). During test (T1-T4), the person either reached directly for the object (T1-T4, left panel), or in a curvilinear fashion (T1-T4, right panel).](/Users/shariliu/Documents/HarvardLDS/Studies/LUMI/analyses/fig1.jpeg)
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  comment = "##",
+  collapse = TRUE
+)
+
+## load required packages
+ipak <- function (pkg) {
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+
+packages <- c("tidyverse", "Hmisc", "lattice", "multcomp", "lsmeans", "schoRsch", "influence.ME", "devtools", "skimr", "simr", "lme4", "effects", "lmerTest", "ICC", "compute.es", "pwr")
+
+ipak(packages)
+```
+
+```{r import, include = FALSE}
+
+lumi.wide <- read.csv("/Users/shariliu/Documents/HarvardLDS/Studies/LUMI/analyses/lumi_data_deid.csv", header = TRUE) # change to your local directory
+
+str(lumi.wide)
+```
+
+```{r prep_data, include = FALSE, cache = TRUE, dependson="lumi_wide"}
+# convert to long format
+lumi.long <- gather(lumi.wide, type, look, ineff.1:avg.eff)
+str(lumi.long)
+lumi.long$type <- factor(lumi.long$type)
+lumi.long$loglook <- log(lumi.long$look)
+lumi.long$testpair <- NA
+lumi.long$testtype <- NA
+
+# assign test pair and type info to data from individual test trials
+for (i in 1:nrow(lumi.long)) {
+  if (lumi.long$type[i] == "ineff.1" | lumi.long$type[i] == "prop.ineff1") {
+    lumi.long$testtype[i] <- "inefficient"
+    lumi.long$testpair[i] <- "first"
+  }
+  else if (lumi.long$type[i] == "ineff.2" | lumi.long$type[i] == "prop.ineff2") {
+    lumi.long$testtype[i] <- "inefficient"
+    lumi.long$testpair[i] <- "second"
+  }
+  else if (lumi.long$type[i] == "ineff.3" | lumi.long$type[i] == "prop.ineff3") {
+    lumi.long$testtype[i] <- "inefficient"
+    lumi.long$testpair[i] <- "third"
+  }
+  else if (lumi.long$type[i] == "eff.1") {
+    lumi.long$testtype[i] <- "efficient"
+    lumi.long$testpair[i] <- "first"
+  }
+  else if (lumi.long$type[i] == "eff.2") {
+    lumi.long$testtype[i] <- "efficient"
+    lumi.long$testpair[i] <- "second"
+  }
+  else if (lumi.long$type[i] == "eff.3") {
+    lumi.long$testtype[i] <- "efficient"
+    lumi.long$testpair[i] <- "third"
+  }
+}
+
+
+# set baseline levels of all categorical predictors for analyses later on
+lumi.long$testtype <- factor(lumi.long$testtype)
+lumi.long$testtype <- relevel(lumi.long$testtype, ref = "efficient")
+lumi.long$testpair <- factor(lumi.long$testpair)
+lumi.long$testpair <- relevel(lumi.long$testpair, ref = "first")
+lumi.wide$first.test <- relevel(lumi.wide$first.test, ref = "efficient")
+lumi.wide$goal <- relevel(lumi.wide$goal, ref = "pick.up")
+lumi.wide$hab <- relevel(lumi.wide$hab, ref = "unconstrained")
+lumi.wide$mitten <- relevel(lumi.wide$mitten, ref = "no.mitten")
+lumi.wide$causal <- relevel(lumi.wide$causal, ref = "no.causal")
+lumi.wide$sex <- relevel(lumi.wide$sex, ref = "m")
+lumi.wide$habbed <- factor(lumi.wide$habbed)
+lumi.wide$habbed <- relevel(lumi.wide$habbed, ref = "0")
+lumi.wide$pref <- relevel(lumi.wide$pref, ref = "eff")
+
+# section data based on dv
+lumi.prop.avg <- filter(lumi.long, type == "prop.ineff.all")
+lumi.raw.avg <- filter(lumi.long, type == "avg.eff" | type == "avg.ineff")
+lumi.prop.tp <- filter(lumi.long, type == "prop.ineff1" | type == "prop.ineff2" | type == "prop.ineff3")
+lumi.raw.tp <- filter(lumi.long, type == "ineff.1" | type == "ineff.2" | type == "ineff.3" | type == "eff.1" |type == "eff.2"| type == "eff.3")
+```
+
+```{r distribution, include = FALSE,  cache = TRUE}
+# is a lognormal transformation justified given the distribution of looks?
+hist(lumi.raw.avg$look, main = NULL, breaks = 10, xlab = "Looking Time (s)")
+fitdistr(lumi.raw.avg$look, "normal")$loglik
+fitdistr(lumi.raw.avg$look, "lognormal")$loglik
+```
+
+```{r within_variance, include = FALSE}
+## Retrieved from : http://www.cookbook-r.com/Graphs/Plotting_means_and_error_bars_(ggplot2)/#error-bars-for-within-subjects-variables
+## Gives count, mean, standard deviation, standard error of the mean, and confidence interval (default 95%).
+##   data: a data frame.
+##   measurevar: the name of a column that contains the variable to be summariezed
+##   groupvars: a vector containing names of columns that contain grouping variables
+##   na.rm: a boolean that indicates whether to ignore NA's
+##   conf.interval: the percent range of the confidence interval (default is 95%)
+summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+                      conf.interval=.95, .drop=TRUE) {
+  library(plyr)
+  
+  # New version of length which can handle NA's: if na.rm==T, don't count them
+  length2 <- function (x, na.rm=FALSE) {
+    if (na.rm) sum(!is.na(x))
+    else       length(x)
+  }
+  
+  # This does the summary. For each group's data frame, return a vector with
+  # N, mean, and sd
+  datac <- ddply(data, groupvars, .drop=.drop,
+                 .fun = function(xx, col) {
+                   c(N    = length2(xx[[col]], na.rm=na.rm),
+                     mean = mean   (xx[[col]], na.rm=na.rm),
+                     sd   = sd     (xx[[col]], na.rm=na.rm)
+                   )
+                 },
+                 measurevar
+  )
+  
+  # Rename the "mean" column    
+  datac <- plyr::rename(datac, c("mean" = measurevar))
+  
+  datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
+  
+  # Confidence interval multiplier for standard error
+  # Calculate t-statistic for confidence interval: 
+  # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
+  ciMult <- qt(conf.interval/2 + .5, datac$N-1)
+  datac$ci <- datac$se * ciMult
+  
+  return(datac)
+}
+## Norms the data within specified groups in a data frame; it normalizes each
+## subject (identified by idvar) so that they have the same mean, within each group
+## specified by betweenvars.
+##   data: a data frame.
+##   idvar: the name of a column that identifies each subject (or matched subjects)
+##   measurevar: the name of a column that contains the variable to be summariezed
+##   betweenvars: a vector containing names of columns that are between-subjects variables
+##   na.rm: a boolean that indicates whether to ignore NA's
+normDataWithin <- function(data=NULL, idvar, measurevar, betweenvars=NULL,
+                           na.rm=FALSE, .drop=TRUE) {
+  library(plyr)
+  
+  # Measure var on left, idvar + between vars on right of formula.
+  data.subjMean <- ddply(data, c(idvar, betweenvars), .drop=.drop,
+                         .fun = function(xx, col, na.rm) {
+                           c(subjMean = mean(xx[,col], na.rm=na.rm))
+                         },
+                         measurevar,
+                         na.rm
+  )
+  
+  # Put the subject means with original data
+  data <- merge(data, data.subjMean)
+  
+  # Get the normalized data in a new column
+  measureNormedVar <- paste(measurevar, "_norm", sep="")
+  data[,measureNormedVar] <- data[,measurevar] - data[,"subjMean"] +
+    mean(data[,measurevar], na.rm=na.rm)
+  
+  # Remove this subject mean column
+  data$subjMean <- NULL
+  
+  return(data)
+}
+
+## Summarizes data, handling within-subjects variables by removing inter-subject variability.
+## It will still work if there are no within-S variables.
+## Gives count, un-normed mean, normed mean (with same between-group mean),
+##   standard deviation, standard error of the mean, and confidence interval.
+## If there are within-subject variables, calculate adjusted values using method from Morey (2008).
+##   data: a data frame.
+##   measurevar: the name of a column that contains the variable to be summariezed
+##   betweenvars: a vector containing names of columns that are between-subjects variables
+##   withinvars: a vector containing names of columns that are within-subjects variables
+##   idvar: the name of a column that identifies each subject (or matched subjects)
+##   na.rm: a boolean that indicates whether to ignore NA's
+##   conf.interval: the percent range of the confidence interval (default is 95%)
+summarySEwithin <- function(data=NULL, measurevar, betweenvars=NULL, withinvars=NULL,
+                            idvar=NULL, na.rm=FALSE, conf.interval=.95, .drop=TRUE) {
+  
+  # Ensure that the betweenvars and withinvars are factors
+  factorvars <- vapply(data[, c(betweenvars, withinvars), drop=FALSE],
+                       FUN=is.factor, FUN.VALUE=logical(1))
+  
+  if (!all(factorvars)) {
+    nonfactorvars <- names(factorvars)[!factorvars]
+    message("Automatically converting the following non-factors to factors: ",
+            paste(nonfactorvars, collapse = ", "))
+    data[nonfactorvars] <- lapply(data[nonfactorvars], factor)
+  }
+  
+  # Get the means from the un-normed data
+  datac <- summarySE(data, measurevar, groupvars=c(betweenvars, withinvars),
+                     na.rm=na.rm, conf.interval=conf.interval, .drop=.drop)
+  
+  # Drop all the unused columns (these will be calculated with normed data)
+  datac$sd <- NULL
+  datac$se <- NULL
+  datac$ci <- NULL
+  
+  # Norm each subject's data
+  ndata <- normDataWithin(data, idvar, measurevar, betweenvars, na.rm, .drop=.drop)
+  
+  # This is the name of the new column
+  measurevar_n <- paste(measurevar, "_norm", sep="")
+  
+  # Collapse the normed data - now we can treat between and within vars the same
+  ndatac <- summarySE(ndata, measurevar_n, groupvars=c(betweenvars, withinvars),
+                      na.rm=na.rm, conf.interval=conf.interval, .drop=.drop)
+  
+  # Apply correction from Morey (2008) to the standard error and confidence interval
+  #  Get the product of the number of conditions of within-S variables
+  nWithinGroups    <- prod(vapply(ndatac[,withinvars, drop=FALSE], FUN=nlevels,
+                                  FUN.VALUE=numeric(1)))
+  correctionFactor <- sqrt( nWithinGroups / (nWithinGroups-1) )
+  
+  # Apply the correction factor
+  ndatac$sd <- ndatac$sd * correctionFactor
+  ndatac$se <- ndatac$se * correctionFactor
+  ndatac$ci <- ndatac$ci * correctionFactor
+  
+  # Combine the un-normed means with the normed results
+  merge(datac, ndatac)
+}
+
+
+## get within-subjects CIs for plotting
+summary.avg <- summarySEwithin(data = dplyr::filter(lumi.raw.avg, ageday >= 90), measurevar = "look", betweenvars = c("experiment", "training", "hab","goal","mitten","causal"), withinvars = "type",
+                                  idvar = "subj_id")
+kable(summary.avg, caption = "Summary of Avg Looks to Eff and Ineff Actions")
+
+
+summary.tp <- summarySEwithin(data = dplyr::filter(lumi.raw.tp, ageday >= 90), measurevar = "look", betweenvars = c("experiment", "training", "hab","goal","mitten","causal"), withinvars = c("testtype", "testpair"),
+                                   idvar = "subj_id")
+summary.tp
+```
+
+A.
+```{r fig2a, echo = FALSE, warning = FALSE, fig.width = 18, cache = TRUE}
+
+# avg looks to eff and ineff, grouped by experiment, with full variable info 
+fig2.raw <- ggplot(data = dplyr::filter(lumi.raw.avg), aes(type, look, fill=experiment))
+fig2.raw +
+  geom_boxplot(outlier.colour = NA, alpha = 0.5)+
+  stat_summary(fun.y = mean, alpha = 0.8, geom = "point", shape=21, size=3, position = "dodge", colour = "black") +
+  ylab("Looking Time (s)") +
+  coord_cartesian(ylim = c(0, 40)) +
+  geom_point(alpha = 0.1)+
+  geom_line(alpha = 0.1, aes(group = subj_id))+
+  geom_errorbar(data = summary.avg, size = .5, width = 0, aes(ymin=look-ci, ymax=look+ci)) +
+  facet_grid(~experiment+training+hab+goal+mitten+causal)+
+  scale_x_discrete(labels = c("eff","ineff"))+
+  theme_linedraw(15)+
+  theme(legend.position="none", axis.title.x=element_blank())
+```
+B.
+```{r fig2b, echo = FALSE, warning = FALSE, fig.width = 18, cache = TRUE}
+# prop looks ineff, grouped by experiment, with full variable info 
+fig2.prop <- ggplot(data = dplyr::filter(lumi.prop.avg), aes(testtype, look, fill=experiment))
+fig2.prop + 
+  geom_violin(alpha = 0.5, fill = NA, width = 0.5)+
+  geom_boxplot(alpha = 0.5)+
+  stat_summary(fun.y = mean, geom = "point", shape =21, size=3, position = "dodge", colour = "black") +
+  ylab("Proportion Looking to Inefficient Reach") +
+  xlab(element_blank())+
+  geom_jitter(width = .05, alpha = 0.2)+
+  coord_cartesian(ylim = c(0,1)) +
+  stat_summary(fun.data = mean_cl_boot, geom = "errorbar", colour="black", position = position_dodge(width = 5), width = 0) +
+  geom_hline(yintercept=0.5, alpha=0.4)+
+  facet_grid(~experiment+training+hab+goal+mitten+causal)+
+  theme_linedraw(15)+
+  theme(strip.placement = "outside") +
+  theme(legend.position="none", axis.text.x = element_blank(), axis.title.x=element_blank())
+
+```
+
+**Figure 2.** Looking time in (A) seconds towards the efficient versus inefficient reach, and (B) proportion looking towards the inefficient reach at test across Experiments 1-5 (*n*=152) and across Experiments 1-5 in Skerry et al. (2013) (*n*=112). Labels above each panel list the experiment name (Exp. 1-5, SCS Exp. 1-5), type of motor training (none, sticky, or not.sticky mittens), type of habituation (constrained or unconstrained), goal (state.change or pick.up), whether her actions appeared to be causal (yes.causal or no.causal), and whether the actress wore a mitten (yes.mitten or no.mitten). Error bars around means indicate within-subjects 95% confidence intervals (A) and bootstrapped 95% confidence intervals (B). Individual points (B) or pairs of points (A) indicate data from a single participant. Horizontal bars within boxes indicate medians, and boxes indicate the middle 2 quartiles of data. Violin plots in (B) indicate distribution of data, area scaled proportionally to the number of observations. 
+
+```{r fig_misc, include = FALSE, cache = TRUE}
+plot.prop.tp <- ggplot(data = dplyr::filter(lumi.prop.tp), aes(testpair, look, fill=experiment))
+plot.prop.tp + 
+  geom_violin(alpha = 0.5, fill = NA)+
+  geom_boxplot(alpha = 0.5, width = 0.5)+
+  stat_summary(fun.y = mean, geom = "point", shape =21, size=3, position = "dodge", colour = "black") +
+  ylab("Proportion Looking to Inefficient Reach") +
+  xlab(element_blank())+
+  geom_point(alpha = 0.2)+
+  coord_cartesian(ylim = c(0,1)) +
+  stat_summary(fun.data = mean_cl_boot, geom = "errorbar", colour="black", size = .6, position = position_dodge(width = .9), width = .1) +
+  geom_hline(yintercept=0.5, alpha=0.4)+
+  # stat_summary(fun.y=mean, geom="point", fill="white", shape=23, size=6)+
+  facet_wrap(~experiment+training+hab+goal+mitten+causal)+
+  theme_linedraw(15)+
+  theme(legend.position="none", axis.text.x = element_blank(), axis.title.x=element_blank())
+  
+# habituation sum
+hab.plot <- ggplot(data = filter(lumi.wide, paper == "LBS"), aes(experiment, total_hab, fill = experiment)) 
+hab.plot + 
+  geom_violin(alpha = 0.5, fill = NA)+
+  geom_boxplot(alpha = 0.5, width = 0.5)+
+  stat_summary(fun.y = mean, geom = "point", shape =21, size=3, position = "dodge", colour = "black") +
+  stat_summary(fun.data = mean_cl_boot, geom = "errorbar", colour="black", size = .6, position = position_dodge(width = .9), width = 0.05) +
+  xlab("Experiment") + ylab("Looking Time (s)") +
+  coord_cartesian(ylim = c(0, 500)) +
+  theme_linedraw(15)+
+  theme(legend.position="none")
+```
+
+```{r analysis_prep, include = FALSE, cache=TRUE}
+exp1.avg <-dplyr::filter(lumi.raw.avg, experiment == "Exp.1")
+exp2.avg <-dplyr::filter(lumi.raw.avg, experiment == "Exp.2")
+exp3.avg <-dplyr::filter(lumi.raw.avg, experiment == "Exp.3")
+exp4.avg <-dplyr::filter(lumi.raw.avg, experiment == "Exp.4")
+exp5.avg <-dplyr::filter(lumi.raw.avg, experiment == "Exp.5")
+op <- options(contrasts = c("contr.treatment", "contr.poly")) # treatment contrasts
+
+# function for identifying influential observations, and then returning a new model without them
+# INPUTS: model = model name, data = dataset, and subj = column heading for observations
+# OUTPUT: model excluding influential subjects
+exclude.cooks <- function(model, data, subj) {
+  cooks <- cooks.distance(influence(model, subj))
+  cutoff <- 4/length(unique(data$subj))
+  new.model <- exclude.influence(model1.exp1, grouping = "subj_id", level=exp1.avg[which(cooks > cutoff),]$subj_id)
+  return(new.model)
+}
+```
+
+```{r exp1, cache = TRUE}
+
+# null model
+model0.exp1 <- lmer(formula = loglook ~ 1 + (1|subj_id),
+               data = exp1.avg, REML = FALSE)
+
+# hypothesis-driven model
+model1.exp1 <- lmer(formula = loglook ~ type * hab + (1|subj_id),
+               data = exp1.avg, REML = FALSE)
+
+# standardized values
+model1.exp1.beta <- lmer(formula = scale(loglook) ~ type * hab + (1|subj_id),
+                         data = exp1.avg, REML = FALSE)
+
+# identify and check influence of observations
+model.exp1.cooks <- exclude.cooks(model1.exp1, exp1.avg, "subj_id")
+
+# look at contrasts within each habituation condition
+contrasts.exp1 <- difflsmeans(model1.exp1)
+```
+```{r exp1_explore}
+# # exploratory model adding age and sex as predictors
+# model3.exp1 <- lmer(formula = loglook ~ type * hab + ageday + sex + (1|subj_id),
+#                     data = exp1.avg, REML = FALSE)
+# summary(model2.exp1)
+# confint(model2.exp1)
+# plot(allEffects(model2.exp1))
+# 
+# # standardized values
+# model3.exp1.beta <- lmer(formula = scale(loglook) ~ type * hab + scale(ageday) + sex + (1|subj_id),
+#                          data = exp1.avg, REML = FALSE)
+# fixef(model2.exp1.beta)
+# 
+# # check for influential observations
+# plot(influence(model3.exp1, "subj_id"), which="cook",
+#      cutoff=4/40, sort=TRUE,
+#      xlab="Cook´s Distance",
+#      ylab="Subject ID")
+# 
+# # remove influential observations
+# model3.exp1.cooks <- lmer(formula = loglook ~ type * hab + ageday + sex + (1|subj_id),
+#                     data = dplyr::filter(exp1.avg, subj_id != "S1_24"), REML = FALSE)
+# summary(model3.exp1.cooks)
+# confint(model3.exp1.cooks)
+# 
+# # standardized values
+# model3.exp1.cooks.beta <- lmer(formula = scale(loglook) ~ type * hab + scale(ageday) + sex + (1|subj_id),
+#                           data = dplyr::filter(exp1.avg, subj_id != "S1_24"), REML = FALSE)
+# summary(model3.exp1.cooks.beta)
+# 
+# # compare model fits
+# anova(model0.exp1, model1.exp1, model2.exp1, model3.exp1)
+# 
+# # further exploratory analysis that doesn't average across 3 test pairs
+# # specify dataset
+# exp1.tp <-dplyr::filter(lumi.raw.tp, experiment == "Exp.1" & ageday > 90)
+# 
+# model4.exp1 <- lmer(formula = loglook ~ testtype * hab + (1+testpair|subj_id),
+#                     data = exp1.tp, REML = FALSE)
+# summary(model4.exp1)
+# confint(model4.exp1)
+# 
+# # standardized values
+# model4.exp1.beta <- lmer(formula = scale(loglook) ~ testtype * hab + (1+testpair|subj_id),
+#                     data = exp1.tp, REML = FALSE)
+# fixef(model4.exp1.beta)
+# 
+# # check for influential observations. none found
+# plot(influence(model4.exp1, "subj_id"), which="cook",
+#      cutoff=4/40, sort=TRUE,
+#      xlab="Cook´s Distance",
+#      ylab="Subject ID")
+# 
+# # look at contrasts within each habituation condition
+# eff1b <- allEffects(model4.exp1)
+# eff1b_df <- as.data.frame(eff1b[["testtype:hab"]])
+# eff1b_df
+# model4.exp1.contrasts <- lsmeans(model4.exp1, specs = ~testtype*hab)    # at = list(cond = factor(0))
+# contrast(model4.exp1.contrasts, method = "pairwise", adjust="none")    # can use p.adjust
+# confint(contrast(model4.exp1.contrasts, method = "pairwise", adjust="none"))
+```
+In Experiment 1 (*N*=`r length(unique(exp1.avg$subj_id))`; `r length(unique(exp1.avg$subj_id))/2` per condition), we asked whether 3-month-old infants expect  a person to reach out and cause an object to change state efficiently. Infants were habituated to a person who reached over a barrier (H1) and appeared to cause an object to light up by touching it, and then tested on efficient and inefficient reaches without the barrier (T1). We found that infants looked longer at the inefficient action (M=`r summary.avg %>% filter(type == "avg.ineff", experiment == "Exp.1", hab == "constrained") %>% select(look)`s, []) than the efficient action (M=`r summary.avg %>% filter(type == "avg.eff", experiment == "Exp.1", hab == "constrained") %>% select(look)`s, SD=7.58), STATS. Critically, this looking preference, cannot be attributed to low-level preferences for the curvilinear reach, because infants who were randomly assigned to habituate to identical videos without the barrier in the way (H2) looked equally to the inefficient (M=8.788000s, SD) and efficient (M, SD) actions, STATS. 
+plot(difflsmeans(model1.exp1))
+
+
+<!-- ## Experiment 3: Agent picks up object with no mittens on ---------------------------------------------- -->
+
+<!-- # specify dataset -->
+<!-- exp2.avg <- dplyr::filter(lumi.raw.avg, experiment == "Exp.2") -->
+
+<!-- # null model -->
+<!-- model0.exp2 <- lmer(formula = loglook ~ 1 + (1|subj_id), -->
+<!--                  data = exp2.avg, REML = FALSE) -->
+<!-- summary(model0.exp2) -->
+
+<!-- # hypothesis-driven model -->
+<!-- model1.exp2 <- lmer(formula = loglook ~ type + (1|subj_id), -->
+<!--                  data = exp2.avg, REML = FALSE) -->
+<!-- summary(model1.exp2) -->
+<!-- confint(model1.exp2) -->
+
+<!-- # standardized values -->
+<!-- model1.exp2.beta <- lmer(formula = scale(loglook) ~ type + (1|subj_id), -->
+<!--                     data = exp2.avg, REML = FALSE) -->
+<!-- fixef(model1.exp2.beta) -->
+<!-- summary(model1.exp2.beta) -->
+
+<!-- # check for influential observations -->
+<!-- plot(influence(model1.exp2, "subj_id"), which="cook", -->
+<!--      cutoff=4/20, sort=TRUE, -->
+<!--      xlab="Cook´s Distance", -->
+<!--      ylab="Subject ID") -->
+
+<!-- # remove influential observations -->
+<!-- model1.exp2.cook <- lmer(formula = loglook ~ type + (1|subj_id), -->
+<!--                          data = dplyr::filter(exp2.avg, subj_id != "S2_5" & subj_id != "S2_7"), REML = FALSE) -->
+<!-- summary(model1.exp2.cook) -->
+<!-- confint(model1.exp2.cook) -->
+
+<!-- # standardized values -->
+<!-- model1.exp2.cook.beta <- lmer(formula = scale(loglook) ~ type + (1|subj_id), -->
+<!--                               data = dplyr::filter(exp2.avg, subj_id != "S2_5" & subj_id != "S2_7"), REML = FALSE) -->
+<!-- fixef(model1.exp2.cook.beta) -->
+
+<!-- # exploratory model checking explicitly for order effects -->
+<!-- model2.exp2 <- lmer(formula = loglook ~ type * first.test + (1|subj_id), -->
+<!--                     data = exp2.avg, REML = FALSE) -->
+<!-- summary(model2.exp2) -->
+<!-- confint(model2.exp2) -->
+
+<!-- # standardized values -->
+<!-- model2.exp2.beta <- lmer(formula = scale(loglook) ~ type * first.test + (1|subj_id), -->
+<!--                     data = exp2.avg, REML = FALSE) -->
+<!-- fixef(model2.exp2.beta) -->
+
+<!-- # check for influential observations -->
+<!-- plot(influence(model2.exp2, "subj_id"), which="cook", -->
+<!--      cutoff=4/20, sort=TRUE, -->
+<!--      xlab="Cook´s Distance", -->
+<!--      ylab="Subject ID") -->
+
+<!-- # remove influential observations -->
+<!-- model2.exp2.cooks <- lmer(formula = loglook ~ type * first.test + (1|subj_id), -->
+<!--                     data = dplyr::filter(exp2.avg, subj_id != "S2_7" & subj_id != "S2_5"), REML = FALSE) -->
+<!-- summary(model2.exp2.cooks) -->
+<!-- confint(model2.exp2.cooks) -->
+
+<!-- # standardized values -->
+<!-- model2.exp2.cooks.beta <- lmer(formula = scale(loglook) ~ type * first.test + (1|subj_id), -->
+<!--                           data = dplyr::filter(exp2.avg, subj_id != "S2_7" & subj_id != "S2_5"), REML = FALSE) -->
+<!-- summary(model2.exp2.cooks.beta) -->
+
+<!-- # no order effect. an additional exploratory model adding sex and age in days -->
+<!-- model3.exp2 <- lmer(formula = loglook ~ type + sex + ageday + (1|subj_id), -->
+<!--                data = exp2.avg, REML = FALSE) -->
+<!-- summary(model3.exp2) -->
+<!-- confint(model3.exp2) -->
+
+<!-- # standardized values -->
+<!-- model3.exp2.beta <- lmer(formula = scale(loglook) ~ type + sex + scale(ageday) + (1|subj_id), -->
+<!--                     data = exp2.avg, REML = FALSE) -->
+<!-- fixef(model3.exp2.beta) -->
+
+<!-- # check for influential observations -->
+<!-- plot(influence(model3.exp2, "subj_id"), which="cook", -->
+<!--      cutoff=4/20, sort=TRUE, -->
+<!--      xlab="Cook´s Distance", -->
+<!--      ylab="Subject ID") -->
+
+<!-- # remove influential observations -->
+<!-- model3.exp2.cooks <- lmer(formula = loglook ~  type + sex + ageday + (1|subj_id), -->
+<!--                           data = dplyr::filter(exp2.avg, subj_id != "S2_7" & subj_id != "S2_5"), REML = FALSE) -->
+<!-- summary(model3.exp2.cooks) -->
+<!-- confint(model3.exp2.cooks) -->
+
+<!-- # standardized values -->
+<!-- model3.exp2.cooks.beta <- lmer(formula = scale(loglook) ~  type + sex + scale(ageday) + (1|subj_id), -->
+<!--                                data = dplyr::filter(exp2.avg, subj_id != "S2_7" & subj_id != "S2_5"), REML = FALSE) -->
+<!-- summary(model3.exp2.cooks.beta) -->
+
+<!-- # compare model fits -->
+<!-- anova(model0.exp2, model1.exp2, model2.exp2, model3.exp2) -->
+
+
+<!-- # further exploratory analysis that doesn't average across 3 test pairs -->
+<!-- # specify dataset -->
+<!-- exp2.tp <-dplyr::filter(lumi.raw.tp, experiment == "Exp.2")  -->
+
+<!-- model4.exp2 <- lmer(formula = loglook ~ testtype + (1+testpair|subj_id), -->
+<!--                     data = exp2.tp, REML = FALSE) -->
+<!-- summary(model4.exp2) -->
+<!-- confint(model4.exp2) -->
+
+<!-- # standardized values -->
+<!-- model4.exp2.beta <- lmer(formula = scale(loglook) ~ testtype + (1+testpair|subj_id), -->
+<!--                          data = exp1.tp, REML = FALSE) -->
+<!-- fixef(model4.exp2.beta) -->
+
+<!-- # check for influential observations. none found -->
+<!-- plot(influence(model4.exp2, "subj_id"), which="cook", -->
+<!--      cutoff=4/20, sort=TRUE, -->
+<!--      xlab="Cook´s Distance", -->
+<!--      ylab="Subject ID") -->
+
+<!-- # remove influential observations -->
+<!-- model4.exp2.cook <- lmer(formula = loglook ~ testtype +  (1+testpair|subj_id), -->
+<!--                     data = dplyr::filter(exp2.tp, subj_id != "S2_7"), REML = FALSE) -->
+<!-- summary(model4.exp2.cook) -->
+<!-- confint(model4.exp2.cook) -->
+
+<!-- # standardized values -->
+<!-- model4.exp2.cook.beta <- lmer(formula = scale(loglook) ~ testtype + (1|subj_id) + (1|testpair), -->
+<!--                               data = dplyr::filter(exp2.tp, subj_id != "S2_7" & subj_id != "S2_5"), REML = FALSE) -->
+<!-- fixef(model4.exp2.cook.beta) -->
+
+
+<!-- ## Experiment 4: Agent picks up object with mittens on. ----------------------------------- -->
+
+<!-- # specify dataset -->
+<!-- exp3.avg <- dplyr::filter(lumi.raw.avg, experiment == "Exp.3") -->
+
+<!-- # null model -->
+<!-- model0.exp3 <- lmer(formula = loglook ~ 1 + (1|subj_id), -->
+<!--                     data = exp3.avg, REML = FALSE) -->
+<!-- summary(model0.exp3) -->
+
+<!-- # hypothesis-driven model -->
+<!-- model1.exp3 <- lmer(formula = loglook ~ type + (1|subj_id), -->
+<!--                     data = exp3.avg, REML = FALSE) -->
+<!-- summary(model1.exp3) -->
+<!-- confint(model1.exp3) -->
+
+<!-- # standardized values -->
+<!-- model1.exp3.beta <- lmer(formula = scale(loglook) ~ type + (1|subj_id), -->
+<!--                          data = exp3.avg, REML = FALSE) -->
+<!-- fixef(model1.exp3.beta) -->
+
+<!-- # check for influential observations -->
+<!-- plot(influence(model1.exp3, "subj_id"), which="cook", -->
+<!--      cutoff=4/20, sort=TRUE, -->
+<!--      xlab="Cook´s Distance", -->
+<!--      ylab="Subject ID") -->
+
+<!-- # remove influential observations -->
+<!-- model1.exp3.cook <- lmer(formula = loglook ~ type + (1|subj_id), -->
+<!--                          data = dplyr::filter(exp3.avg, subj_id != "S3_12"), REML = FALSE) -->
+<!-- summary(model1.exp3.cook) -->
+<!-- confint(model1.exp3.cook) -->
+
+<!-- # standardized values -->
+<!-- model1.exp3.cook.beta <- lmer(formula = scale(loglook) ~ type + (1|subj_id), -->
+<!--                               data = dplyr::filter(exp3.avg, subj_id != "S3_12"), REML = FALSE) -->
+<!-- fixef(model1.exp3.cook.beta) -->
+
+<!-- # exploratory model checking explicitly for order effects -->
+<!-- model2.exp3 <- lmer(formula = loglook ~ type * first.test + (1|subj_id), -->
+<!--                     data = exp3.avg, REML = FALSE) -->
+<!-- summary(model2.exp3) -->
+<!-- confint(model2.exp3) -->
+
+<!-- # standardized values -->
+<!-- model2.exp3.beta <- lmer(formula = scale(loglook) ~ type * first.test + (1|subj_id), -->
+<!--                          data = exp3.avg, REML = FALSE) -->
+<!-- fixef(model2.exp3.beta) -->
+
+<!-- # check for influential observations -->
+<!-- plot(influence(model2.exp3, "subj_id"), which="cook", -->
+<!--      cutoff=4/20, sort=TRUE, -->
+<!--      xlab="Cook´s Distance", -->
+<!--      ylab="Subject ID") -->
+
+<!-- # remove influential observations -->
+<!-- model2.exp3.cooks <- lmer(formula = loglook ~ type * first.test + (1|subj_id), -->
+<!--                           data = dplyr::filter(exp3.avg, subj_id != "S3_12" & subj_id != "S3_15"), REML = FALSE) -->
+<!-- summary(model2.exp3.cooks) -->
+<!-- confint(model2.exp3.cooks) -->
+
+<!-- # standardized values -->
+<!-- model2.exp3.cooks.beta <- lmer(formula = scale(loglook) ~ type * first.test + (1|subj_id), -->
+<!--                                data = dplyr::filter(exp3.avg, subj_id != "S3_12" & subj_id != "S3_15"), REML = FALSE) -->
+<!-- summary(model2.exp3.cooks.beta) -->
+
+
+<!-- # look at contrasts within each order -->
+<!-- eff3 <- allEffects(model2.exp3) -->
+<!-- eff3.df <- as.data.frame(eff3[["type:first.test"]]) -->
+<!-- eff3.df -->
+<!-- model2.exp3.contrasts <- lsmeans(model2.exp3, specs = ~type*first.test)    # at = list(cond = factor(0)) -->
+<!-- contrast(model2.exp3.contrasts, method = "pairwise", adjust="none")    # can use p.adjust  -->
+<!-- confint(contrast(model2.exp3.contrasts, method = "pairwise", adjust="none")) -->
+
+<!-- # an additional exploratory model adding sex and age in days -->
+<!-- model3.exp3 <- lmer(formula = loglook ~ type * first.test + sex + ageday + (1|subj_id), -->
+<!--                     data = exp3.avg, REML = FALSE) -->
+<!-- summary(model3.exp3) -->
+<!-- confint(model3.exp3) -->
+
+<!-- # standardized values -->
+<!-- model3.exp3.beta <- lmer(formula = scale(loglook) ~ type * first.test + sex + scale(ageday) + (1|subj_id), -->
+<!--                          data = exp3.avg, REML = FALSE) -->
+<!-- fixef(model3.exp3.beta) -->
+
+<!-- # check for influential observations -->
+<!-- plot(influence(model3.exp3, "subj_id"), which="cook", -->
+<!--      cutoff=4/20, sort=TRUE, -->
+<!--      xlab="Cook´s Distance", -->
+<!--      ylab="Subject ID") -->
+
+<!-- # remove influential observations -->
+<!-- model3.exp3.cooks <- lmer(formula = loglook ~ type * first.test + sex + ageday + (1|subj_id), -->
+<!--                           data = dplyr::filter(exp3.avg, subj_id != "S3_17" & subj_id != "S3_15"), REML = FALSE) -->
+<!-- summary(model3.exp3.cooks) -->
+<!-- confint(model3.exp3.cooks) -->
+
+<!-- # standardized values -->
+<!-- model3.exp3.cooks.beta <- lmer(formula = scale(loglook) ~  type * first.test + sex + scale(ageday) + (1|subj_id), -->
+<!--                                data = dplyr::filter(exp3.avg, subj_id != "S3_17" & subj_id != "S3_15"), REML = FALSE) -->
+<!-- summary(model3.exp3.cooks.beta) -->
+
+<!-- # compare model fits -->
+<!-- anova(model0.exp3, model1.exp3, model2.exp3, model3.exp3) -->
+
+<!-- # further exploratory analysis that doesn't average across 3 test pairs -->
+<!-- # specify dataset -->
+<!-- exp3.tp <-dplyr::filter(lumi.raw.tp, experiment == "Exp.3")  -->
+
+<!-- model4.exp3 <- lmer(formula = loglook ~ testtype +  (1+testpair|subj_id), -->
+<!--                     data = exp3.tp, REML = FALSE) -->
+<!-- summary(model4.exp3) -->
+<!-- confint(model4.exp3) -->
+
+<!-- # standardized values -->
+<!-- model4.exp3.beta <- lmer(formula = scale(loglook) ~ testtype + (1|subj_id) + (1|testpair), -->
+<!--                          data = exp1.tp, REML = FALSE) -->
+<!-- fixef(model4.exp3.beta) -->
+
+<!-- # check for influential observations. none found -->
+<!-- plot(influence(model4.exp3, "subj_id"), which="cook", -->
+<!--      cutoff=4/20, sort=TRUE, -->
+<!--      xlab="Cook´s Distance", -->
+<!--      ylab="Subject ID") -->
+<!-- ## Analyses looking at effect versus mittens vs no mittens (comparing Exp 2, 3, and SCS Exp 2 and 3)--------- -->
+
+<!-- # specify dataset -->
+<!-- mittens.avg <- dplyr::filter(lumi.raw.avg, experiment == "Exp.2" | experiment == "Exp.3" |experiment == "SCS.Exp.2" |experiment == "SCS.Exp.4") -->
+
+<!-- # null model -->
+<!-- mittens.model0 <- lmer(formula = loglook ~ 1 + (1|subj_id), -->
+<!--                        data = mittens.avg, REML = FALSE) -->
+<!-- summary(mittens.model0) -->
+
+<!-- # do the mittens of the agent matter? -->
+<!-- mittens.model1 <- lmer(formula = loglook ~ type * mitten + (1|subj_id), -->
+<!--                        data = mittens.avg, REML = FALSE) -->
+<!-- summary(mittens.model1) -->
+<!-- confint(mittens.model1) -->
+
+<!-- # standardized values -->
+<!-- mittens.model1.beta <- lmer(formula = scale(loglook) ~ type * mitten + (1|subj_id), -->
+<!--                             data = mittens.avg, REML = FALSE) -->
+<!-- summary(mittens.model1.beta) -->
+
+<!-- # check for influential observations -->
+<!-- plot(influence(mittens.model1, "subj_id"), which="cook", -->
+<!--      cutoff=4/80, sort=TRUE, -->
+<!--      xlab="Cook´s Distance", -->
+<!--      ylab="Subject ID") -->
+
+<!-- # remove influential observations -->
+<!-- mittens.model1.cook <- lmer(formula = loglook ~ type * mitten + (1|subj_id), -->
+<!--                             data = dplyr::filter(mittens.avg, subj_id != "S2_5" & subj_id != "S2_7" & subj_id != "SCS_S3_12"), REML = FALSE) -->
+<!-- summary(mittens.model1.cook) -->
+<!-- confint(mittens.model1.cook) -->
+
+<!-- # standardized values -->
+<!-- mittens.model1.cook.beta <- lmer(formula = loglook ~ type * mitten + (1|subj_id), -->
+<!--                                  data = dplyr::filter(mittens.avg, subj_id != "S2_5" & subj_id != "S2_7" & subj_id != "SCS_S3_12"), REML = FALSE) -->
+<!-- summary(mittens.model1.cook.beta) -->
+
+<!-- # look at contrasts for responses to test events across mitten vs no mitten  -->
+<!-- eff.mittens <- allEffects(mittens.model1) -->
+<!-- eff.mittens.df <- as.data.frame(eff.mittens[["type:mitten"]]) -->
+<!-- eff.mittens.df -->
+<!-- mittens.model1contrasts <- lsmeans(mittens.model1, specs = ~type*mitten)    # at = list(cond = factor(0)) -->
+<!-- contrast(mittens.model1contrasts, method = "pairwise", adjust="none")    # can use p.adjust  -->
+<!-- confint(contrast(mittens.model1contrasts, method = "pairwise", adjust="none")) -->
+
+
+<!-- # Closer comparisons: Exp 2 (success, no mittens) vs Exp 3 (no success, mittens) -->
+
+<!-- # specify dataset -->
+<!-- mittens.avg.23 <- dplyr::filter(lumi.raw.avg, experiment == "Exp.2" | experiment == "Exp.4") -->
+
+<!-- # hypothesis driven: does the mitten affect kids' responses to the efficient vs inefficient test events? -->
+<!-- mittens.model2 <- lmer(formula = loglook ~ type * mitten + (1|subj_id), -->
+<!--                        data = mittens.avg.23, REML = FALSE) -->
+<!-- summary(mittens.model2) -->
+<!-- confint(mittens.model2) -->
+
+<!-- # standardized values -->
+<!-- mittens.model2.beta <- lmer(formula = scale(loglook) ~ type * mitten + (1|subj_id), -->
+<!--                             data = mittens.avg.23, REML = FALSE) -->
+<!-- summary(mittens.model2.beta) -->
+
+<!-- # check for influential observations -->
+<!-- plot(influence(mittens.model2, "subj_id"), which="cook", -->
+<!--      cutoff=4/40, sort=TRUE, -->
+<!--      xlab="Cook´s Distance", -->
+<!--      ylab="Subject ID") -->
+
+<!-- # remove influential observations -->
+<!-- mittens.model2.cook <- lmer(formula = loglook ~ type * mitten + (1|subj_id), -->
+<!--                             data = dplyr::filter(mittens.avg.23, subj_id != "S3_12" & subj_id != "S2_7" & subj_id != "S2_5"), REML = FALSE) -->
+<!-- summary(mittens.model2.cook) -->
+<!-- confint(mittens.model2.cook) -->
+
+<!-- # standardized values -->
+<!-- mittens.model2.cook.beta <- lmer(formula = scale(loglook) ~ type * mitten + (1|subj_id), -->
+<!--                                  data = dplyr::filter(mittens.avg.23, subj_id != "S3_12" & subj_id != "S2_7" & subj_id != "S2_5"), REML = FALSE) -->
+<!-- summary(mittens.model2.cook.beta) -->
+
+<!-- # Closer comparisons: Exp 2 (success, no mittens) vs SCS Exp 2 (no success, no training, yes mitten) -->
+<!-- # specify dataset -->
+<!-- mittens.avg.2scs2 <- dplyr::filter(lumi.raw.avg, experiment == "Exp.3" | experiment == "SCS.Exp.2") -->
+
+<!-- # hypothesis driven: does the mitten affect kids' responses to the efficient vs inefficient test events? -->
+<!-- mittens.model3 <- lmer(formula = loglook ~ type * mitten + (1|subj_id), -->
+<!--                        data = mittens.avg.2scs2, REML = FALSE) -->
+<!-- summary(mittens.model3) -->
+<!-- confint(mittens.model3) -->
+
+<!-- # standardized values -->
+<!-- mittens.model2.beta <- lmer(formula = scale(loglook) ~ type * mitten + (1|subj_id), -->
+<!--                             data = mittens.avg.2scs2, REML = FALSE) -->
+<!-- summary(mittens.model2.beta) -->
+
+<!-- # check for influential observations -->
+<!-- plot(influence(mittens.model3, "subj_id"), which="cook", -->
+<!--      cutoff=4/40, sort=TRUE, -->
+<!--      xlab="Cook´s Distance", -->
+<!--      ylab="Subject ID") -->
+
+<!-- # remove influential observations -->
+<!-- mittens.model3.cook <- lmer(formula = loglook ~ type * mitten + (1|subj_id), -->
+<!--                             data = dplyr::filter(mittens.avg.2scs2, subj_id != "S2_7" & subj_id != "S2_5"), REML = FALSE) -->
+<!-- summary(mittens.model3.cook) -->
+<!-- confint(mittens.model3.cook) -->
+
+<!-- # standardized values -->
+<!-- mittens.model3.cook.beta <- lmer(formula = scale(loglook) ~ type * mitten + (1|subj_id), -->
+<!--                                  data = dplyr::filter(mittens.avg.2scs2, subj_id != "S2_7" & subj_id != "S2_5"), REML = FALSE) -->
+<!-- summary(mittens.model3.cook.beta) -->
+
+<!-- # Closer comparisons: Exp 2 (success, no mittens) vs SCS Exp 3 (no success, ineffective training, yes mitten) -->
+<!-- # specify dataset -->
+<!-- mittens.avg.2scs3 <- dplyr::filter(lumi.raw.avg, experiment == "Exp.2" | experiment == "SCS.Exp.3") -->
+
+<!-- # hypothesis driven: does the mitten affect kids' responses to the efficient vs inefficient test events? -->
+<!-- mittens.model4 <- lmer(formula = loglook ~ type * mitten + (1|subj_id), -->
+<!--                        data = mittens.avg.2scs3, REML = FALSE) -->
+<!-- summary(mittens.model4) -->
+<!-- confint(mittens.model4) -->
+
+<!-- # standardized values -->
+<!-- mittens.model4.beta <- lmer(formula = scale(loglook) ~ type * mitten + (1|subj_id), -->
+<!--                             data = mittens.avg.2scs3, REML = FALSE) -->
+<!-- summary(mittens.model4.beta) -->
+
+<!-- # check for influential observations -->
+<!-- plot(influence(mittens.model4, "subj_id"), which="cook", -->
+<!--      cutoff=4/40, sort=TRUE, -->
+<!--      xlab="Cook´s Distance", -->
+<!--      ylab="Subject ID") -->
+
+<!-- # remove influential observations -->
+<!-- mittens.model4.cook <- lmer(formula = loglook ~ type * mitten + (1|subj_id), -->
+<!--                             data = dplyr::filter(mittens.avg.2scs3, subj_id != "SCS_S3_12"), REML = FALSE) -->
+<!-- summary(mittens.model4.cook) -->
+<!-- confint(mittens.model4.cook) -->
+
+<!-- # standardized values -->
+<!-- mittens.model4.cook.beta <- lmer(formula = scale(loglook) ~ type * mitten + (1|subj_id), -->
+<!--                                  data = dplyr::filter(mittens.avg.2scs2, subj_id != "SCS_S3_12"), REML = FALSE) -->
+<!-- summary(mittens.model4.cook.beta) -->
+
+
+<!-- ## Experiment 4 vs Experiment 1: Agent changes state of object with versus without spatiotemporal gap.----------------------- -->
+
+<!-- # specify dataset -->
+<!-- exp4.avg <- dplyr::filter(lumi.raw.avg, experiment == "Exp.2" | experiment == "Exp.1" & ageday > 90 & hab == "constrained") -->
+
+<!-- # null model -->
+<!-- model0.exp4 <- lmer(formula = loglook ~ 1 + (1|subj_id), -->
+<!--                     data = exp4.avg, REML = FALSE) -->
+<!-- summary(model0.exp4) -->
+
+<!-- # hypothesis-driven model: does causality affect the way that kids respond to efficiency? -->
+<!-- model1.exp4 <- lmer(formula = loglook ~ type * causal + (1|subj_id), -->
+<!--                     data = exp4.avg, REML = FALSE) -->
+<!-- summary(model1.exp4) -->
+<!-- confint(model1.exp4) -->
+
+<!-- # standardized values -->
+<!-- model1.exp4.beta <- lmer(formula = scale(loglook) ~ type * causal + (1|subj_id), -->
+<!--                          data = exp4.avg, REML = FALSE) -->
+<!-- fixef(model1.exp4.beta) -->
+
+<!-- # check for influential observations. none found -->
+<!-- plot(influence(model1.exp4, "subj_id"), which="cook", -->
+<!--      cutoff=4/40, sort=TRUE, -->
+<!--      xlab="Cook´s Distance", -->
+<!--      ylab="Subject ID") -->
+
+<!-- # look at contrasts for responses to test events across causal vs not causal  -->
+<!-- eff.exp4 <- allEffects(model1.exp4) -->
+<!-- eff.exp4.df <- as.data.frame(eff.exp4[["type:causal"]]) -->
+<!-- eff.exp4.df -->
+<!-- model1.exp4.contrasts <- lsmeans(model1.exp4.beta, specs = ~type*causal)    # at = list(cond = factor(0)) -->
+<!-- contrast(model1.exp4.contrasts, method = "pairwise", adjust="none")    # can use p.adjust  -->
+<!-- confint(contrast(model1.exp4.contrasts, method = "pairwise", adjust="none")) -->
+
+<!-- # an additional exploratory model adding order, sex and age in days -->
+<!-- model3.exp4 <- lmer(formula = loglook ~ type + first.test + sex + ageday + (1|subj_id), -->
+<!--                     data = exp4.avg, REML = FALSE) -->
+<!-- summary(model3.exp4) -->
+<!-- confint(model3.exp4) -->
+
+<!-- # standardized values -->
+<!-- model3.exp4.beta <- lmer(formula = scale(loglook) ~ type + first.test + sex + scale(ageday) + (1|subj_id), -->
+<!--                          data = exp4.avg, REML = FALSE) -->
+<!-- fixef(model3.exp4.beta) -->
+
+<!-- # check for influential observations -->
+<!-- plot(influence(model3.exp4, "subj_id"), which="cook", -->
+<!--      cutoff=4/40, sort=TRUE, -->
+<!--      xlab="Cook´s Distance", -->
+<!--      ylab="Subject ID") -->
+
+<!-- # remove influential observations -->
+<!-- model3.exp4.cooks <- lmer(formula = loglook ~ type + first.test + sex + ageday + (1|subj_id), -->
+<!--                           data = dplyr::filter(exp4.avg, subj_id != "S1_8" & subj_id != "S4_6" & subj_id != "S1_24" & subj_id != "S4_4"), REML = FALSE) -->
+<!-- summary(model3.exp4.cooks) -->
+<!-- confint(model3.exp4.cooks) -->
+
+<!-- # standardized values -->
+<!-- model3.exp4.cooks.beta <- lmer(formula = scale(loglook) ~  type * first.test + sex + scale(ageday) + (1|subj_id), -->
+<!--                                data = dplyr::filter(exp4.avg, subj_id != "S1_8" & subj_id != "S4_6" & subj_id != "S1_24" & subj_id != "S4_4"), REML = FALSE) -->
+<!-- summary(model3.exp4.cooks.beta) -->
+
+<!-- # compare model fits -->
+<!-- anova(model0.exp4, model1.exp4, model2.exp4, model3.exp4) -->
+
+
+
+<!-- ## Exploratory analysis across all experiments -------------------- -->
+
+<!-- # PROPORTION LOOKING DV -->
+
+<!-- # specify dataset  -->
+<!-- lumi.prop <- dplyr::filter(lumi.prop.avg, ageday>90) -->
+
+<!-- # null model -->
+<!-- model0.all <- lm(formula = look ~ 1, -->
+<!--                    data = lumi.prop) -->
+<!-- summary(model0.all) -->
+
+<!-- # full exploratory model  -->
+
+
+<!-- model1.all <- lmer(formula = prop.ineff.all ~ training + hab + goal + mitten + causal + (1+first.test|experiment) + (1|ageday) + (1|sex), -->
+<!--                    data = lumi.wide) -->
+<!-- summary(model1.all) -->
+<!-- confint(model1.all) -->
+<!-- plot(allEffects(model1.all)) -->
+
+
+<!-- # pick out influential observations -->
+<!-- cooks <- cooks.distance(model1.all) -->
+<!-- cutoff <- 4/nrow(lumi.prop) -->
+
+<!-- # and remove them based on the 4/n cutoff -->
+<!-- model1.all.cooks <- lm(formula = look ~ training + hab + goal + mitten + causal, -->
+<!--                  data = lumi.prop[-which(cooks > cutoff),]) -->
+<!-- summary(model1.all.cooks) -->
+<!-- confint(model1.all.cooks) -->
+
+<!-- par(mfrow=c(1,5)) -->
+<!-- plot(allEffects(model1.all.cooks), -->
+<!--      ylab="Prop Looking to Inefficient Action", -->
+<!--      main = NA, -->
+<!--      ylim=c(0.39,0.61), -->
+<!--      cex.lab = 4, -->
+<!--      cex.axis = 4, -->
+<!--      cex = .7) -->
+
+<!-- ## Power analyses------- -->
+
+<!-- model.orig <- lmer(loglook ~ type + (1|subj_id), -->
+<!--                    data = dplyr::filter(exp1.avg, hab == "constrained" & ageday > 90)) -->
+<!-- summary(model.orig) -->
+
+<!-- exp1.sim <- powerCurve(extend(model.orig, along="subj_id", n=400), -->
+<!--                        along="subj_id", breaks = c(20, 25, 30, 35, 40), alpha = .05, seed = 123) -->
+<!-- plot(exp1.sim) -->
+<!-- print(exp1.sim) -->
+
+

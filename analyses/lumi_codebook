@@ -1,0 +1,14 @@
+# Codebook: Liu et al. (in prep)
+
+## Column headings, `lumi_deid.csv`
+
+1. reliability 
+2. paper
+3. subj_id
+4. experiment
+5. training
+6. hab
+7. first.test
+8. goal
+9. mitten
+10. causal
