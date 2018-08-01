@@ -42,7 +42,9 @@ ipak <- function (pkg) {
   sapply(pkg, require, character.only = TRUE)
 }
 
-packages <- c("tidyverse", "Hmisc", "lattice", "multcomp", "lsmeans", "schoRsch", "influence.ME", "devtools", "skimr", "simr", "lme4", "sjPlot", "effects", "lmerTest", "ICC", "compute.es", "pwr", "stringr")
+devtools::install_github("crsh/papaja")
+
+packages <- c("tidyverse", "Hmisc", "lattice", "multcomp", "lsmeans", "schoRsch", "influence.ME", "devtools", "skimr", "simr", "lme4", "sjPlot", "effects", "lmerTest", "ICC", "compute.es", "pwr", "stringr", "papaja")
 
 ipak(packages)
 
@@ -326,7 +328,8 @@ fig.S1 +
 normal.ll <- fitdistr(lumi.raw.avg$look, "normal")$loglik
 lognormal.ll <- fitdistr(lumi.raw.avg$look, "lognormal")$loglik
 ```
-**Figure S1.** Density plot of looking times during test across Experiments 1-5, and Skerry et al. (2013). An analysis of these distributions reveal that a lognormal distribution (log likelihood=`r lognormal.ll`) provides a better fit to these data than a normal distribution (log likelihood= `r normal.ll`). 
+
+**Figure S1.** Density plot of looking times during test across Experiments 1-5, and Experiments 1-5 from Skerry et al. (2013) (N=`r length(unique(lumi.wide$subj_id))`). Maximum-likelihood fitting revealed that the lognormal distribution (log likelihood=`r lognormal.ll`) provides a better fit to these data than the normal distribution (log likelihood=`r normal.ll`).
 
 ***
 
@@ -359,6 +362,7 @@ hab.plot +
   theme_linedraw(15)+
   theme(legend.position="none")
 ```
+
 **Figure S2.** Total looking time in seconds during habituation across Experiment 1-5. Error bars around means indicate bootstrapped 95% confidence intervals. Individual points indicate data from a single participant. Horizontal bars within boxes indicate medians, and boxes indicate the middle 2 quartiles of data. Violin plots in indicate distribution of data, area scaled proportionally to the number of observations. 
 
 ***
@@ -384,6 +388,9 @@ exclude.cooks <- function(model, data, subj) {
 ```
 
 # Results
+
+## Reliability
+
 
 ## Experiment 1
 ```{r exp1}
@@ -447,7 +454,7 @@ names(contrasts.exp12) <- str_replace_all(names(contrasts.exp12), ' ', '') # ren
 names(contrasts.exp12) <- str_replace_all(names(contrasts.exp12), '-', '')
 ```
 
-In Experiment 2 (N=`r length(unique(exp2.avg$subj_id))`), we asked whether infants’ sensitivity to the efficiency of this action depends their construal of the person as a causal agent (an agent contacting an object, thereby changing its state) or on lower-level scene features (an agent reaching towards a toy that lights up), by manipulating the spatiotemporal contingency of this action. In Experiment 2, pre-registered at xxxxxxx, infants were habituated to videos identical to H1, except that the person’s hand stopped 50 pixels away from the object, and the object changed state after a 0.5 delay (H3). At test, the person reached efficiently or inefficiently in the absence of the barrier with the same spatiotemporal gap (T2). This manipulation was inspired by past studies of causal perception (cite, cite), and asks whether infants' analysis of the causal structure of an action is critical to their understanding of this action as intentional. We found that infants looked equally between the efficient (M=`r summary.avg$look[5]`s, SD=`r summary.avg$sd[5]`) and inefficient (M=`r summary.avg$look[6]`s, SD=`r summary.avg$sd[6]`) reach (T2), B=`r model1.exp2.table$Estimate[2]`, p=`r model1.exp2.table$Pr...t..[2]`, mixed effects model with trial type as fixed effect and participants as a random intercept, a result that differed from infants’ responses to causally contingent videos, B=`r model1.exp12.table$Estimate[4]`, p=`r model1.exp12.table$Pr...t..[4]`, mixed effects model with fixed interaction between causality and trial type.
+In Experiment 2 (N=`r length(unique(exp2.avg$subj_id))`), we asked whether infants’ sensitivity to the efficiency of this action depends their construal of the person as a causal agent (an agent contacting an object, thereby changing its state) or on lower-level scene features (an agent reaching towards a toy that lights up), by manipulating the spatiotemporal contingency of this action. In Experiment 2, pre-registered at https://osf.io/a5byn/, infants were habituated to videos identical to H1, except that the person’s hand stopped 50 pixels away from the object, and the object changed state after a 0.5 delay (H3). At test, the person reached efficiently or inefficiently in the absence of the barrier with the same spatiotemporal gap (T2). This manipulation was inspired by past studies of causal perception (cite, cite), and asks whether infants' analysis of the causal structure of an action is critical to their understanding of this action as intentional. We found that infants looked equally between the efficient (M=`r summary.avg$look[5]`s, SD=`r summary.avg$sd[5]`) and inefficient (M=`r summary.avg$look[6]`s, SD=`r summary.avg$sd[6]`) reach (T2), B=`r model1.exp2.table$Estimate[2]`, p=`r model1.exp2.table$Pr...t..[2]`, mixed effects model with trial type as fixed effect and participants as a random intercept, a result that differed from infants’ responses to causally contingent videos, B=`r model1.exp12.table$Estimate[4]`, p=`r model1.exp12.table$Pr...t..[4]`, mixed effects model with fixed interaction between causality and trial type.
 
 ## Experiment 3
 ```{r exp3}
@@ -473,7 +480,7 @@ names(contrasts.exp3) <- str_replace_all(names(contrasts.exp3), ' ', '') # renam
 names(contrasts.exp3) <- str_replace_all(names(contrasts.exp3), '-', '')
 ```
 
-Experiment 3 (N=`r length(unique(exp3.avg$subj_id))`; `r length(unique(exp3.avg$subj_id))/2` per condition) attempts to replicates the findings from Experiments 1 and 2 by asking whether infants only expect causally effective reaches to be efficient, relative to the same actions that are not spatiotemporally contingent. We randomly assigned infants to H1 and T1, or H2 and T2, which enables us to stringently compare infants' responses to the test displays as a function of causal information. Infants again looked to the events differently depending on whether the events were causal, B=`r model1.exp3.table$Estimate[4]`, p=`r model1.exp3.table$Pr...t..[4]`, mixed effects model with fixed interaction of causality and test event. Like in Experiment 1, infants looked longer at the inefficient reach (M=`r summary.avg$look[10]`s, SD=`r summary.avg$sd[10]`) versus the efficient reach (M=`r summary.avg$look[9]`s, SD=`r summary.avg$sd[9]`) when the person’s actions were causally effective, B=`r contrasts.exp3$Estimate[6]`, p=`r contrasts.exp3$pvalue[6]`, and as in Experiment 3, infants looked equally to the inefficient (M=`r summary.avg$look[8]`s, SD=`r summary.avg$sd[8]`) and efficient (M=`r summary.avg$look[7]`s, SD=`r summary.avg$sd[7]`) reach when her actions were causally noncontingent, B=`r contrasts.exp3$Estimate[1]`, p=`r contrasts.exp3$pvalue[1]`. Together, Experiments 1-3 show that pre-reaching infants apply the principle of efficiency (Gergely & Csibra, 2003) to reaching actions that they themselves have never experienced, and that they only apply this principle to actions that appear to cause changes in the world.
+Experiment 3 (N=`r length(unique(exp3.avg$subj_id))`; `r length(unique(exp3.avg$subj_id))/2` per condition) attempts to replicates the findings from Experiments 1 and 2 by asking whether infants only expect causally effective reaches to be efficient, relative to the same actions that are not spatiotemporally contingent. In this experiment, pre-registered at https://osf.io/f2hvd/, we randomly assigned infants to H1 and T1, or H2 and T2, which enables us to stringently compare infants' responses to the test displays as a function of causal information. Infants again looked to the events differently depending on whether the events were causal, B=`r model1.exp3.table$Estimate[4]`, p=`r model1.exp3.table$Pr...t..[4]`, mixed effects model with fixed interaction of causality and test event. Like in Experiment 1, infants looked longer at the inefficient reach (M=`r summary.avg$look[10]`s, SD=`r summary.avg$sd[10]`) versus the efficient reach (M=`r summary.avg$look[9]`s, SD=`r summary.avg$sd[9]`) when the person’s actions were causally effective, B=`r contrasts.exp3$Estimate[6]`, p=`r contrasts.exp3$pvalue[6]`, and as in Experiment 3, infants looked equally to the inefficient (M=`r summary.avg$look[8]`s, SD=`r summary.avg$sd[8]`) and efficient (M=`r summary.avg$look[7]`s, SD=`r summary.avg$sd[7]`) reach when her actions were causally noncontingent, B=`r contrasts.exp3$Estimate[1]`, p=`r contrasts.exp3$pvalue[1]`. Together, Experiments 1-3 show that pre-reaching infants apply the principle of efficiency (Gergely & Csibra, 2003) to reaching actions that they themselves have never experienced, and that they only apply this principle to actions that appear to cause changes in the world.
 
 ## Experiments 4 and 5
 ```{r exp45}
@@ -548,7 +555,7 @@ names(contrasts.exp4.scs) <- str_replace_all(names(contrasts.exp4.scs), ' ', '')
 names(contrasts.exp4.scs) <- str_replace_all(names(contrasts.exp4.scs), '-', '')
 
 ```
-Why do infants succeed here without motor training, and fail in Skerry et al. (2013)? One possibility is that pre-reaching infants struggle to understand the causal structure of reaching for and retrieving an object without the relevant motor experience. Another possibility is that pre-reaching infants do not interpret the reach of a mittened hand, one that looks different from most hands they see, as intentional without the relevant experience of observing and experiencing their own mittened hands act causally during training (cite Woodward glove?). To test for this second possibility, we ran two additional experiments. In Experiment 4 (N=`r length(unique(exp4.avg$subj_id))`), infants were habituated and tested on events very similar to those from Skerry (H4, T3), where a person reaches for and picks up an object while wearing a white mitten. In Experiment 5 (N=`r length(unique(exp4.avg$subj_id))`), infants saw almost identical videos to those from Experiment 4 except that the person reached with a bare hand (H5, T4).
+Why do infants succeed here without motor training, and fail in Skerry et al. (2013)? One possibility is that pre-reaching infants struggle to understand the causal structure of reaching for and retrieving an object without the relevant motor experience. Another possibility is that pre-reaching infants do not interpret the reach of a mittened hand, one that looks different from most hands they see, as intentional without the relevant experience of observing and experiencing their own mittened hands act causally during training (cite Woodward glove?). To test for this second possibility, we ran two additional experiments. In Experiment 4 (N=`r length(unique(exp4.avg$subj_id))`), infants were habituated and tested on events very similar to those from Skerry (H4, T3), where a person reaches for and picks up an object while wearing a white mitten. In Experiment 5 (N=`r length(unique(exp4.avg$subj_id))`), infants saw almost identical videos to those from Experiment 4 except that the person reached with a bare hand (H5, T4). ^[Experiments 4 and 5 were run before Exp 2 and 3, after our lab began to pre-register experiments. As in Experiments 2 and 3, sample sizes, analyses, and exclusionary criteria for these 2 experiments were set prior to data collection.]
 
 We found that infants looked marginally longer at the inefficient (M=`r summary.avg$look[14]`, SD=`r summary.avg$sd[14]`) than the efficient (M=`r summary.avg$look[13]`, SD=`r summary.avg$sd[13]`) reach when a bare hand was reaching, B=`r contrasts.exp45$Estimate[1]`, p=`r contrasts.exp45$pvalue[1]/2`, and did not distinguish the inefficient (M=`r summary.avg$look[12]`, SD=`r summary.avg$sd[12]`) and efficient (M=`r summary.avg$look[11]`, SD=`r summary.avg$sd[11]`) action when a mittened hand was reaching, B=`r contrasts.exp45$Estimate[6]`, p=`r contrasts.exp45$pvalue[6]`. However, these two patterns of looking did not differ from each other, B=`r model1.exp45.table$Estimate[4]`, p=`r model1.exp45.table$Pr...t..[4]`, mixed effects model with fixed interaction between mitten and test trial, random intercept for participants.
 
@@ -598,6 +605,7 @@ plot(allEffects(model1.all),
      cex.axis = 4,
      cex = .7)
 ```
+
 **Figure 3.** (A) Regression table and (B1-2) effect plots for model investigating predictors of sensitivity to action efficiency across Experiment 1-5 and all experiments from Skerry et al. (2013) (total N=`r length(unique(lumi.wide$subj_id))`). Dependent measure is proportion looking towards the inefficient reach, averaged across 3 test trials during test. Categorical predictors were coded using sum contrasts, and fixed effects from the model should therefore be interpreted with respect to the grand mean (with respect to 0, in (B). Error bars indicate 95% confidence intervals. B1 shows the effect of different manipulations relative to the grand mean. B2 shows estimates of effects at each level of all categorical predictors.
 
 ***
@@ -614,7 +622,7 @@ We also found that infants' expectations were not affected when:
  * they received ineffective motor training, relative to no training, B=`r model1.all.table$Estimate[3]`, p=`r model1.all.table$Pr...t..[3]`
  * the person wore a mitten, B=`r model1.all.table$Estimate[6]`, p=`r model1.all.table$Pr...t..[6]`  
 
-This analysis is consistent with our general interpretation infants expect any intentional, rational agent to reach efficiently so long as the causal mechanism of their action is clear. Either infants with motor training or presenting them with causally transparent actions provides them with this insight.
+These results are consistent with our general interpretation infants expect any intentional, rational agent to reach efficiently so long as the causal mechanism of their action is clear. Either provding pre-reaching infants with motor training or presenting them with causally transparent actions helps them towards the insight that reaching is a causal, intentional action.
 
 
 
