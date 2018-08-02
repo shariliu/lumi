@@ -33,3 +33,5 @@ bindrcpp
 plyr
 stringr
 sjPlot
+lpSolve
+irr

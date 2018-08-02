@@ -42,9 +42,8 @@ ipak <- function (pkg) {
   sapply(pkg, require, character.only = TRUE)
 }
 
-devtools::install_github("crsh/papaja")
 
-packages <- c("tidyverse", "Hmisc", "lattice", "multcomp", "lsmeans", "schoRsch", "influence.ME", "devtools", "skimr", "simr", "lme4", "sjPlot", "effects", "lmerTest", "ICC", "compute.es", "pwr", "stringr", "papaja")
+packages <- c("tidyverse", "Hmisc", "lattice", "multcomp", "lsmeans", "schoRsch", "influence.ME", "devtools", "skimr", "simr", "lme4", "sjPlot", "effects", "lmerTest", "compute.es", "pwr", "stringr", "irr")
 
 ipak(packages)
 
@@ -53,6 +52,7 @@ ipak(packages)
 ```{r import}
 
 lumi.wide <- read.csv("/Users/shariliu/Documents/HarvardLDS/Studies/LUMI/github/analyses/lumi_data_deid.csv", header = TRUE) # change to your local directory
+lumi.rel <- read.csv("/Users/shariliu/Documents/HarvardLDS/Studies/LUMI/github/analyses/lumi_reliability.csv", header=TRUE)
 
 str(lumi.wide)
 ```
@@ -390,6 +390,14 @@ exclude.cooks <- function(model, data, subj) {
 # Results
 
 ## Reliability
+```{r reliability}
+exp1.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.1")$newlook, filter(lumi.rel, experiment == "Exp.1")$look.orig), model = "twoway", type = "agreement", unit = "single")
+exp2.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.2")$newlook, filter(lumi.rel, experiment == "Exp.2")$look.orig), model = "twoway", type = "agreement", unit = "single")
+exp3.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.3")$newlook, filter(lumi.rel, experiment == "Exp.3")$look.orig), model = "twoway", type = "agreement", unit = "single")
+exp4.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.4")$newlook, filter(lumi.rel, experiment == "Exp.4")$look.orig), model = "twoway", type = "agreement", unit = "single")
+exp5.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.5")$newlook, filter(lumi.rel, experiment == "Exp.5")$look.orig), model = "twoway", type = "agreement", unit = "single")
+```
+To assess reliability, 50% of test trials from subjects across Experiments 1-5 were randomly selected and coded by additional researchers who were unaware of experimental condition, and test trial order. The intraclass correlation coefficient (ICC) between the original data, and this newly coded data, was `r exp1.rel$value` [`r exp1.rel$lbound`, `r exp1.rel$ubound`], `r exp2.rel$value` [`r exp2.rel$lbound`, `r exp2.rel$ubound`], `r exp3.rel$value` [`r exp3.rel$lbound`, `r exp3.rel$ubound`], `r exp4.rel$value` [`r exp4.rel$lbound`, `r exp4.rel$ubound`], `r exp5.rel$value` [`r exp5.rel$lbound`, `r exp5.rel$ubound`], for Experiments 1 through 5, respectively.
 
 
 ## Experiment 1
