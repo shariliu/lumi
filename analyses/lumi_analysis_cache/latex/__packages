@@ -34,3 +34,5 @@ stringr
 papaja
 bindrcpp
 plyr
+lpSolve
+irr
