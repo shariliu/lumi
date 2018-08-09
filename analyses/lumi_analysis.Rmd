@@ -318,56 +318,7 @@ fig2.prop +
 
 ***
 
-```{r figS1, fig.width = 7, include=TRUE}
-# is a lognormal transformation justified given the distribution of looks?
-fig.S1 <- ggplot(data = dplyr::filter(lumi.raw.avg), aes(look, fill=experiment, colour = experiment))
-fig.S1 +
-  geom_density(alpha = 0.5)+
-  # geom_text(aes(experiment))+
-  theme_linedraw(15)+
-  xlab("Looking Time (s)")
 
-normal.ll <- fitdistr(lumi.raw.avg$look, "normal")$loglik
-lognormal.ll <- fitdistr(lumi.raw.avg$look, "lognormal")$loglik
-```
-
-**Figure S1.** Density plot of looking times during test across Experiments 1-5, and Experiments 1-5 from Skerry et al. (2013) (N=`r length(unique(lumi.wide$subj_id))`). Maximum-likelihood fitting revealed that the lognormal distribution (log likelihood=`r lognormal.ll`) provides a better fit to these data than the normal distribution (log likelihood=`r normal.ll`).
-
-***
-
-```{r figS2, fig.width = 7, include=TRUE}
-# plot.prop.tp <- ggplot(data = dplyr::filter(lumi.prop.tp), aes(testpair, look, fill=experiment))
-# plot.prop.tp + 
-#   geom_violin(alpha = 0.5, fill = NA)+
-#   geom_boxplot(alpha = 0.5, width = 0.5)+
-#   stat_summary(fun.y = mean, geom = "point", shape =21, size=3, position = "dodge", colour = "black") +
-#   ylab("Proportion Looking to Inefficient Reach") +
-#   xlab(element_blank())+
-#   geom_point(alpha = 0.2)+
-#   coord_cartesian(ylim = c(0,1)) +
-#   geom_errorbar(data = prop.tp, size = .5, width = 0, aes(ymin=look-ci, ymax=look+ci)) +
-#   geom_hline(yintercept=0.5, alpha=0.4)+
-#   facet_grid(~experiment+training+hab+goal+mitten+causal)+
-#   theme_linedraw(10)+
-#   theme(legend.position="none")
-#   
-# habituation sum
-hab.plot <- ggplot(data = filter(lumi.wide, paper == "LBS"), aes(experiment, total_hab, fill = experiment))
-hab.plot + 
-  geom_violin(alpha = 0.5, fill = NA)+
-  geom_boxplot(alpha = 0.5, width = 0.5)+
-  geom_jitter(width = .05, alpha = 0.2)+
-  stat_summary(fun.y = mean, geom = "point", shape =21, size=3, position = "dodge", colour = "black") +
-  stat_summary(fun.data = mean_cl_boot, geom = "errorbar", colour="black", size = .6, position = position_dodge(width = .9), width = 0.05) +
-  xlab("Experiment") + ylab("Looking Time (s)") +
-  coord_cartesian(ylim = c(0, 500)) +
-  theme_linedraw(15)+
-  theme(legend.position="none")
-```
-
-**Figure S2.** Total looking time in seconds during habituation across Experiment 1-5. Error bars around means indicate bootstrapped 95% confidence intervals. Individual points indicate data from a single participant. Horizontal bars within boxes indicate medians, and boxes indicate the middle 2 quartiles of data. Violin plots in indicate distribution of data, area scaled proportionally to the number of observations. 
-
-***
 
 ```{r analysis_prep}
 exp1.avg <-dplyr::filter(lumi.raw.avg, experiment == "Exp.1")
@@ -424,40 +375,29 @@ lumi.rel <- lumi.rel %>%
 table(lumi.rel$big)
   
 ```
-```{r rel_plot, include=TRUE}
-relplot <- ggplot(data = lumi.rel, aes(experiment, gap, fill = experiment))
-relplot + 
-  # geom_violin(alpha = 0.5, fill = NA)+
-  geom_boxplot(alpha = 0.5, width = 0.5)+
-  geom_jitter(width = .05, alpha = 0.2)+
-  stat_summary(fun.y = mean, geom = "point", shape =21, size=3, position = "dodge", colour = "black") +
-  stat_summary(fun.data = mean_cl_boot, geom = "errorbar", colour="black", size = .6, position = position_dodge(width = .9), width = 0.05) +
-  xlab("Experiment") + ylab("Discrepancy (New - Original) (s)") +
-  theme_linedraw(15)+
-  theme(legend.position="none")  
-```
 
-**Figure S3.** Discrepancy between original and new coding of looking times during test trials in seconds. 
-
-***
 
 To assess reliability, 50% of test trials from participants across Experiments 1-5 (`r length(unique(lumi.wide$subj_id))/2` participants, `r nrow(lumi.rel)` trials) were randomly selected and coded by additional researchers who were unaware of experimental condition, and test trial order. The intraclass correlation coefficient (ICC) between the original data, and this newly coded data, was `r exp1.rel$value` [`r exp1.rel$lbound`, `r exp1.rel$ubound`], `r exp2.rel$value` [`r exp2.rel$lbound`, `r exp2.rel$ubound`], `r exp3.rel$value` [`r exp3.rel$lbound`, `r exp3.rel$ubound`], `r exp4.rel$value` [`r exp4.rel$lbound`, `r exp4.rel$ubound`], `r exp5.rel$value` [`r exp5.rel$lbound`, `r exp5.rel$ubound`], for Experiments 1 through 5, respectively.
 
 ## Exclusion info
+
+**Table S1.** Tally of infants who participated in Experiments 1-5 but were excluded in our final sample. These exclusion criteria were set prior to the start of data collection, but vary slightly by experiment (e.g. we relaxed our definition of inattentiveness from excluding all data from a participant if they missed a test trial in Experiment 1, to excluding data from just that trial in Experiments 2-5). 
+
 Experiment | Fussiness | Inattentiveness | Caregiver Interference | Experimenter/Coding Error | Technical Failure | Total 
 ---------- | --------- | --------------- | ---------------------- | ------------------------- | ----------------- | -----
-Exp.1 | 9 | 5 | 1 | 6 | 3 | 24
+Exp.1 | 9 | 5 | 1 | 12 | 3 | 30
 Exp.2 | 0 | 0 | 0 | 2 | 0 | 2
 Exp.3 | 6 | 0 | 0 | 2 | 0 | 8
 Exp.4 | 7 | 0 | 0 | 2 | 0 | 7
 Exp.5 | 6 | 0 | 0 | 1 | 2 | 9
-
+**Total** | 28 | 5 | 1 | 19 | 5 | 50
 ***
 
 ## Experiment 1
 ```{r exp1}
 # participant info
 exp1.info <- ages(exp1.avg)
+exp.info <- ages(filter(lumi.raw.avg, paper == "LBS"))
 
 # null model
 model0.exp1 <- lmer(formula = loglook ~ 1 + (1|subj_id),
@@ -475,7 +415,15 @@ model1.exp1.beta <- lmer(formula = scale(loglook) ~ type * hab + (1|subj_id),
 model1.exp1.beta.table <- gen.m(model1.exp1.beta)
 
 # identify and check influence of observations
-model.exp1.cooks <- exclude.cooks(model1.exp1, exp1.avg, "subj_id")
+plot(influence(model1.exp1, "subj_id"), which="cook",
+     cutoff=4/40, sort=TRUE,
+     xlab="Cook´s Distance",
+     ylab="Subject ID")
+# 2 detected!
+
+model1.exp1.cooks <- lmer(formula = loglook ~ type * hab + (1|subj_id),
+               data = filter(exp1.avg, subj_id != "S1_6" & subj_id != "S1_25"), REML = FALSE)
+summary(model1.exp1.cooks)
 
 # look at contrasts within each habituation condition
 contrasts.exp1 <- difflsmeans(model1.exp1, test.effs="type:hab")[[1]]
@@ -510,6 +458,11 @@ model1.exp1.beta <- lmer(formula = scale(loglook) ~ type + (1|subj_id),
 
 # identify and check influence of observations
 # model.exp2.cooks <- exclude.cooks(model1.exp2, exp2.avg, "subj_id")
+plot(influence(model1.exp2, "subj_id"), which="cook",
+     cutoff=4/20, sort=TRUE,
+     xlab="Cook´s Distance",
+     ylab="Subject ID")
+# no influential observations
 
 # comparing results to Exp 1
 causality12 <- lumi.raw.avg %>%
@@ -546,7 +499,12 @@ model1.exp3.beta <- lmer(formula = scale(loglook) ~ type * causal + (1|subj_id),
                      data = exp3.avg, REML=FALSE)
 
 # identify and check influence of observations
-# model.exp3.cooks <- exclude.cooks(model1.exp3, exp3.avg, "subj_id")
+# model.exp3.cooks <- exclude.cooks(model1.exp3, exp3.avg, exp3.avg$subj_id)
+plot(influence(model1.exp3, "subj_id"), which="cook",
+     cutoff=4/52, sort=TRUE,
+     xlab="Cook´s Distance",
+     ylab="Subject ID")
+# no influential observations
 
 # look at contrasts within each caual condition
 contrasts.exp3 <- difflsmeans(model1.exp3, test.effs="type:causal")[[1]]
@@ -576,12 +534,20 @@ model1.exp45.beta <- lmer(formula = scale(loglook) ~ type * mitten + (1|subj_id)
 
 # identify and check influence of observations
 # model1.exp45.cooks <- exclude.cooks(model1.exp45, exp45.avg, "subj_id")
+plot(influence(model1.exp45, "subj_id"), which="cook",
+     cutoff=4/40, sort=TRUE,
+     xlab="Cook´s Distance",
+     ylab="Subject ID")
+
+# 3 influential observations identified
+model1.exp45.cooks <- lmer(formula = loglook ~ type * mitten + (1|subj_id) + (1|experiment),
+                     data = filter(exp45.avg, subj_id != "S4_20" & subj_id != "S5_10" & subj_id != "S5_18"), REML=FALSE)
+summary(model1.exp45.cooks)
 
 # look at contrasts within each caual condition
-contrasts.exp45 <- difflsmeans(model1.exp45, test.effs="type:mitten")[[1]]
+contrasts.exp45 <- difflsmeans(model1.exp45.cooks, test.effs="type:mitten")[[1]]
 names(contrasts.exp45) <- str_replace_all(names(contrasts.exp45), ' ', '') # rename to fix issue with ` and - in Rmd
 names(contrasts.exp45) <- str_replace_all(names(contrasts.exp45), '-', '')
-
 ```
 
 ```{r exp5.scs}
@@ -671,7 +637,7 @@ kable(model1.all.table, digits = 3)
 ```
 B1-2.
 
-```{r meta_figure, include=TRUE, fig.width=7}
+```{r meta_figure, include=TRUE, fig.width=12}
 # two ways of plotting: first, plotting model effects
 plot_model(model1.all, sort.est=TRUE, show.values=TRUE, digits=3, colors = "bw",  title = "prop.ineff.all ~ training + hab + goal + mitten + causal + (1+first.test|experiment) + (1|ageday) + (1|sex) + (1|paper)")
 
@@ -703,16 +669,103 @@ We also found that infants' expectations were not affected when:
 These results are consistent with our general interpretation infants expect any intentional, rational agent to reach efficiently so long as the causal mechanism of their action is clear. Either providing pre-reaching infants with motor training or presenting them with causally transparent actions helps them towards the insight that reaching is a causal, intentional action.
 
 
+# Supplemental Analyses
 
-<!-- ## Power analyses------- -->
+## Assessing distribution of looks
 
-<!-- model.orig <- lmer(loglook ~ type + (1|subj_id), -->
-<!--                    data = dplyr::filter(exp1.avg, hab == "constrained" & ageday > 90)) -->
-<!-- summary(model.orig) -->
+```{r distplot, fig.width = 7, include=TRUE}
+# is a lognormal transformation justified given the distribution of looks?
+fig.S1 <- ggplot(data = dplyr::filter(lumi.raw.avg), aes(look, fill=experiment, colour = experiment))
+fig.S1 +
+  geom_density(alpha = 0.5)+
+  # geom_text(aes(experiment))+
+  theme_linedraw(15)+
+  xlab("Looking Time (s)")
 
-<!-- exp1.sim <- powerCurve(extend(model.orig, along="subj_id", n=400), -->
-<!--                        along="subj_id", breaks = c(20, 25, 30, 35, 40), alpha = .05, seed = 123) -->
-<!-- plot(exp1.sim) -->
-<!-- print(exp1.sim) -->
+normal.ll <- fitdistr(lumi.raw.avg$look, "normal")$loglik
+lognormal.ll <- fitdistr(lumi.raw.avg$look, "lognormal")$loglik
+```
+
+**Figure S1.** Density plot of looking times during test across Experiments 1-5, and Experiments 1-5 from Skerry et al. (2013) (N=`r length(unique(lumi.wide$subj_id))`). Maximum-likelihood fitting revealed that the lognormal distribution (log likelihood=`r lognormal.ll`) provides a better fit to these data than the normal distribution (log likelihood=`r normal.ll`).
+
+***
+
+## Assessing reliability 
+
+```{r relplot, include=TRUE}
+relplot <- ggplot(data = lumi.rel, aes(experiment, gap, fill = experiment))
+relplot + 
+  # geom_violin(alpha = 0.5, fill = NA)+
+  geom_boxplot(alpha = 0.5, width = 0.5)+
+  geom_jitter(width = .05, alpha = 0.2)+
+  stat_summary(fun.y = mean, geom = "point", shape =21, size=3, position = "dodge", colour = "black") +
+  stat_summary(fun.data = mean_cl_boot, geom = "errorbar", colour="black", size = .6, position = position_dodge(width = .9), width = 0.05) +
+  xlab("Experiment") + ylab("Discrepancy (New - Original) (s)") +
+  theme_linedraw(15)+
+  theme(legend.position="none")  
+```
+
+**Figure S2.** Discrepancy between original and new coding of looking times during test trials in seconds. 
+
+***
+
+## Comparing looking times during habituation across Exp 1-5
+
+```{r habplot, fig.width = 7, include=TRUE}
+# habituation sum
+hab.plot <- ggplot(data = filter(lumi.wide, paper == "LBS"), aes(experiment, total_hab, fill = experiment))
+hab.plot + 
+  geom_violin(alpha = 0.5, fill = NA)+
+  geom_boxplot(alpha = 0.5, width = 0.5)+
+  geom_jitter(width = .05, alpha = 0.2)+
+  stat_summary(fun.y = mean, geom = "point", shape =21, size=3, position = "dodge", colour = "black") +
+  stat_summary(fun.data = mean_cl_boot, geom = "errorbar", colour="black", size = .6, position = position_dodge(width = .9), width = 0.05) +
+  xlab("Experiment") + ylab("Looking Time (s)") +
+  coord_cartesian(ylim = c(0, 500)) +
+  theme_linedraw(15)+
+  theme(legend.position="none")
+```
+
+**Figure S3.** Total looking time in seconds during habituation across Experiment 1-5. Error bars around means indicate bootstrapped 95% confidence intervals. Individual points indicate data from a single participant. Horizontal bars within boxes indicate medians, and boxes indicate the middle 2 quartiles of data. Violin plots in indicate distribution of data, area scaled proportionally to the number of observations. 
+
+***
+
+```{r hab.analysis}
+
+# assessing effect of experimental manipulations on hab time
+hab1 <- lmer(total_hab ~ ageday + sex + hab + goal + mitten + causal + (1|experiment),
+             data = filter(lumi.wide, paper == "LBS"), REML=FALSE)
+# hab1.table <- gen.m(hab1)
+hab1.ci <- gen.ci(hab1)
+
+# assessing effect fo experiment on hab time
+hab2 <- lm(total_hab ~ experiment + ageday + sex, data = filter(lumi.wide, paper=="LBS"), REML=FALSE)
+# hab2.table <- gen.m(hab2)
+hab2.ci <- gen.ci(hab2)
+
+```
+
+## Exploring effect of test trial order, attention during habituation, age in days, and sex across Exp 1-5
+
+```{r explore}
+# set contrasts for analysis - compare effects against the grand mean
+op <- options(contrasts = c("contr.sum", "contr.poly"))
+
+emodel.exp1 <- lm(loglook ~ hab * type * first.test + total_hab + sex + ageday, data = exp1.avg)
+summary(emodel.exp1)
+
+emodel.exp2 <- lm(loglook ~ type * first.test + total_hab + sex + ageday, data = exp2.avg)
+summary(emodel.exp2)
+
+emodel.exp3 <- lm(loglook ~ causal * type * first.test + total_hab + sex + ageday, data = exp3.avg)
+summary(emodel.exp3)
+
+emodel.exp4 <- lm(loglook ~ type * first.test + total_hab + sex + ageday, data = exp4.avg)
+summary(emodel.exp4)
+
+emodel.exp5 <- lm(loglook ~ type * first.test + total_hab + sex + ageday, data = exp5.avg)
+summary(emodel.exp5)
+```
+
 
 
