@@ -42,8 +42,14 @@ ipak <- function (pkg) {
   sapply(pkg, require, character.only = TRUE)
 }
 
+# Install devtools package if necessary
+if(!"devtools" %in% rownames(installed.packages())) install.packages("devtools")
 
-packages <- c("tidyverse", "Hmisc", "lattice", "multcomp", "lsmeans", "schoRsch", "influence.ME", "devtools", "skimr", "simr", "lme4", "sjPlot", "effects", "lmerTest", "compute.es", "pwr", "stringr", "irr")
+# Install the stable development verions from GitHub
+devtools::install_github("crsh/papaja")
+devtools::install_github('achetverikov/apastats',subdir='apastats')
+
+packages <- c("tidyverse", "Hmisc", "lattice", "multcomp", "lsmeans", "schoRsch", "influence.ME", "devtools", "skimr", "simr", "lme4", "sjPlot", "effects", "lmerTest", "compute.es", "pwr", "stringr", "irr", "papaja", "apastats")
 
 ipak(packages)
 
@@ -346,10 +352,17 @@ gen.ci <- function(model) {
   return(df)
 }
 
-# function that converts model summary to df
+# function that converts model summary (lmer) to df
 gen.m <- function(model) {
   df <- data.frame(coef(summary(model)))
   names(df) <- c("est", "se", "df", "t", "p")
+  return(df)
+}
+
+# function that converts model summary (lm) to df
+gen.lm <- function(model) {
+  df <- data.frame(coef(summary(model)))
+  names(df) <- c("est", "se", "t", "p")
   return(df)
 }
 
@@ -369,11 +382,6 @@ exp3.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.3")$newlook, filter(lu
 exp4.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.4")$newlook, filter(lumi.rel, experiment == "Exp.4")$look.orig), model = "twoway", type = "agreement", unit = "single")
 exp5.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.5")$newlook, filter(lumi.rel, experiment == "Exp.5")$look.orig), model = "twoway", type = "agreement", unit = "single")
 
-lumi.rel <- lumi.rel %>%
-  mutate(big = gap > 3)
-
-table(lumi.rel$big)
-  
 ```
 
 
@@ -626,14 +634,21 @@ lumi.wide$causal <- relevel(lumi.wide$causal, ref = "yes.causal")
 # full exploratory model
 model1.all <- lmer(formula = prop.ineff.all ~ training + hab + goal + mitten + causal + (1+first.test|experiment) + (1|ageday) + (1|sex) + (1|paper), data = lumi.wide)
 model1.all.table <- gen.m(model1.all)
+# model1.all.ci <- gen.ci(model1.all)
+
 # address influential observations
+# plot(influence(model1.all, "subj_id"), which="cook",
+#      cutoff=4/length(unique(lumi.wide$subj_id)), sort=TRUE,
+#      xlab="Cook´s Distance",
+#      ylab="Subject ID")
+
 ```
 
 ***
 
 A.
 ```{r meta_table, include=TRUE}
-kable(model1.all.table, digits = 3)
+kable(cbind(model1.all.table))
 ```
 B1-2.
 
@@ -644,10 +659,13 @@ plot_model(model1.all, sort.est=TRUE, show.values=TRUE, digits=3, colors = "bw",
 # second, plotting model estimates for each level of categorical variable
 plot(allEffects(model1.all),
      main = NA,
-     ylim=c(0.39,0.61),
-     cex.lab = 4,
-     cex.axis = 4,
-     cex = .7)
+     ylim=c(0.37,0.63),
+     ylab="Proportion Looks to Inefficient",
+     ci.style="bars",
+     lwd=4,
+     grid=TRUE,
+     colors={c("black", "red")},
+)
 ```
 
 **Figure 3.** (A) Regression table and (B1-2) effect plots for model investigating predictors of sensitivity to action efficiency across Experiment 1-5 and all experiments from Skerry et al. (2013) (total N=`r length(unique(lumi.wide$subj_id))`). Dependent measure is proportion looking towards the inefficient reach, averaged across 3 test trials during test. Categorical predictors were coded using sum contrasts, and fixed effects from the model should therefore be interpreted with respect to the grand mean (with respect to 0, in (B). Error bars indicate 95% confidence intervals. B1 shows the effect of different manipulations relative to the grand mean. B2 shows estimates of effects at each level of all categorical predictors.
@@ -735,15 +753,11 @@ hab.plot +
 # assessing effect of experimental manipulations on hab time
 hab1 <- lmer(total_hab ~ ageday + sex + hab + goal + mitten + causal + (1|experiment),
              data = filter(lumi.wide, paper == "LBS"), REML=FALSE)
-# hab1.table <- gen.m(hab1)
+hab1.table <- gen.m(hab1)
 hab1.ci <- gen.ci(hab1)
-
-# assessing effect fo experiment on hab time
-hab2 <- lm(total_hab ~ experiment + ageday + sex, data = filter(lumi.wide, paper=="LBS"), REML=FALSE)
-# hab2.table <- gen.m(hab2)
-hab2.ci <- gen.ci(hab2)
-
 ```
+
+To ask whether infants' attention during habituation was affected by experimental manipulations across Experiment 1-5 (constrained vs unconstrained habituation, state change vs pickup goal, mitten vs no mitten, and causally contingent vs noncontigent action), and varied by gender and age, we fit a mixed effects model on these fixed effects and experiment (1-5) as a random intercept. We found that the only robust predictor of attention during habituation was age, [`r hab1.ci$lower[4]`, `r hab1.ci$upper[4]`], B=`r hab1.table$est[2]`, p=`r hab1.table$p[2]`, two-tailed, such that older infants looked for a shorter time overall than younger infants.
 
 ## Exploring effect of test trial order, attention during habituation, age in days, and sex across Exp 1-5
 
@@ -752,20 +766,51 @@ hab2.ci <- gen.ci(hab2)
 op <- options(contrasts = c("contr.sum", "contr.poly"))
 
 emodel.exp1 <- lm(loglook ~ hab * type * first.test + total_hab + sex + ageday, data = exp1.avg)
-summary(emodel.exp1)
+emodel.exp1.table <- gen.lm(emodel.exp1)
+emodel.exp1.ci <- gen.ci(emodel.exp1)
 
 emodel.exp2 <- lm(loglook ~ type * first.test + total_hab + sex + ageday, data = exp2.avg)
-summary(emodel.exp2)
+emodel.exp2.table <- gen.lm(emodel.exp2)
+emodel.exp2.ci <- gen.ci(emodel.exp2)
 
 emodel.exp3 <- lm(loglook ~ causal * type * first.test + total_hab + sex + ageday, data = exp3.avg)
-summary(emodel.exp3)
+emodel.exp3.table <- gen.lm(emodel.exp3)
+emodel.exp3.ci <- gen.ci(emodel.exp3)
 
 emodel.exp4 <- lm(loglook ~ type * first.test + total_hab + sex + ageday, data = exp4.avg)
-summary(emodel.exp4)
+emodel.exp4.table <- gen.lm(emodel.exp4)
+emodel.exp4.ci <- gen.ci(emodel.exp4)
 
 emodel.exp5 <- lm(loglook ~ type * first.test + total_hab + sex + ageday, data = exp5.avg)
-summary(emodel.exp5)
+emodel.exp5.table <- gen.lm(emodel.exp5)
+emodel.exp5.ci <- gen.ci(emodel.exp5)
 ```
 
+To explore the additional effects of test trial order (inefficient or efficient first), attention during habituation, age in days, and sex on attention during test, we ran one linear model per experiment including an interaction between test event order and test event in Experiments 2, 4, and 5, an interaction between these factors and habituation in Experiment 1, and an interaction between these factors and causal contingency in Experiment 3. 
+
+Regression tables for each of these models is below. In general, we find no effect of sex or age, and we consistently find that infants who look longer during habituation also are more attentive during test. 
+
+In Experiment 1, we also find that infants randomly assigned to habituate to a rational agent look longer overall at test, [`r emodel.exp1.ci$lower[2]`, `r emodel.exp1.ci$upper[2]`], B=`r emodel.exp1.table$est[2]`, p=`r emodel.exp1.table$p[2]`, two-tailed, and that infants randomly assigned to view the efficient reach first look longer overall at test, [`r emodel.exp1.ci$lower[4]`, `r emodel.exp1.ci$upper[4]`], B=`r emodel.exp1.table$est[4]`, p=`r emodel.exp1.table$p[4]`, two-tailed.
+
+In Experiment 2, we also find that infants randomly assigned to look at the efficient reach first look longer overall at test, [`r emodel.exp2.ci$lower[3]`, `r emodel.exp2.ci$upper[3]`], B=`r emodel.exp2.table$est[3]`, p=`r emodel.exp2.table$p[3]`, two-tailed.
 
 
+### Experiment 1
+
+`r kable(cbind(emodel.exp1.table, emodel.exp1.ci))`
+
+### Experiment 2
+
+`r kable(cbind(emodel.exp2.table, emodel.exp2.ci))`
+
+### Experiment 3
+
+`r kable(cbind(emodel.exp3.table, emodel.exp3.ci))`
+
+### Experiment 4
+
+`r kable(cbind(emodel.exp4.table, emodel.exp4.ci))`
+
+### Experiment 5
+
+`r kable(cbind(emodel.exp5.table, emodel.exp5.ci))`
