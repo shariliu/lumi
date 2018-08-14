@@ -439,6 +439,15 @@ names(contrasts.exp1.beta) <- str_replace_all(names(contrasts.exp1.beta), ' ', '
 names(contrasts.exp1.beta) <- str_replace_all(names(contrasts.exp1.beta), '-', '')
 ```
 
+```{r exp1.table}
+exp1 <- kable(cbind(model1.exp1.betas,model1.exp1.table,model1.exp1.ci), col.names = c("beta", "b", "se", "df", "t", "p", "lower", "upper"))
+
+exp1.findings <- data.frame(cbind(model1.exp1.betas,model1.exp1.table,model1.exp1.ci))
+names(exp1.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
+
+```
+
+
 
 In Experiment 1 (N=`r length(unique(exp1.avg$subj_id))`; `r length(unique(exp1.avg$subj_id))/2` per condition), we asked whether 3-month-old infants (M=`r exp1.info$mean` days, range=`r exp1.info$min`-`r exp1.info$max`, `r exp1.info$f` female) expect a person to reach out and cause an object to change state efficiently. Half of infants were randomly assigned to habituate to a person who reached over a barrier (H1) and appeared to cause an object to light up by touching it, and then tested on efficient and inefficient reaches without the barrier (T1). The other half of infants habituated to the same reaches except that the barrier was located beyond the goal object, out of the person's way (H2), and viewed the same test events Infants responded differently to the test events across these two habituation conditions, [`r model1.exp1.ci$lower[6]`, `r model1.exp1.ci$upper[6]`], B=`r model1.exp1.table$est[4]`, ß=`r model1.exp1.betas$est[4]`, p=`r model1.exp1.table$p[4]`, mixed effects model with fixed interaction between habituation and test event and random intercept for participants. We found that infants looked longer at the inefficient action (M=`r summary.avg$look[2]`s, SD=`r summary.avg$sd[2]`) than the efficient action (M=`r summary.avg$look[1]`s, SD=`r summary.avg$sd[1]`), [`r contrasts.exp1$LowerCI[1]`, `r contrasts.exp1$UpperCI[1]`], B=`r contrasts.exp1$Estimate[1]`, ß=`r contrasts.exp1.beta$Estimate[1]`, p=`r contrasts.exp1$pvalue[1]`. And critically, this looking preference cannot be attributed to low-level preferences for the curvilinear reach, because infants who were randomly assigned to habituate to identical videos without the barrier in the way (H2) looked equally to the inefficient (M=`r summary.avg$look[4]`s, SD=`r summary.avg$sd[4]`) and efficient (M=`r summary.avg$look[3]`s, SD=`r summary.avg$sd[3]`) actions, [`r contrasts.exp1$LowerCI[6]`, `r contrasts.exp1$UpperCI[6]`], B=`r contrasts.exp1$Estimate[6]`, ß=`r contrasts.exp1.beta$Estimate[6]`, p=`r contrasts.exp1$pvalue[6]`. 
 
@@ -491,6 +500,21 @@ names(contrasts.exp12) <- str_replace_all(names(contrasts.exp12), ' ', '') # ren
 names(contrasts.exp12) <- str_replace_all(names(contrasts.exp12), '-', '')
 ```
 
+
+```{r exp2.table}
+exp2 <- kable(cbind(model1.exp2.betas,model1.exp2.table,model1.exp2.ci), col.names = c("beta", "b", "se", "df", "t", "p", "lower", "upper"))
+
+exp2.findings <- data.frame(cbind(model1.exp2.betas,model1.exp2.table,model1.exp2.ci))
+names(exp3.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
+```
+
+```{r exp12.table}
+exp12 <- kable(cbind(model1.exp12.betas,model1.exp12.table,model1.exp12.ci), col.names = c("beta", "b", "se", "df", "t", "p", "lower", "upper"))
+
+exp12.findings <- data.frame(cbind(model1.exp12.betas,model1.exp12.table,model1.exp12.ci))
+names(exp12.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
+```
+
 In Experiment 2 (N=`r length(unique(exp2.avg$subj_id))`), we asked whether infants’ sensitivity to the efficiency of this action depends their construal of the person as a causal agent (an agent contacting an object, thereby changing its state) or on lower-level scene features (an agent reaching towards a toy that lights up), by manipulating the spatiotemporal contingency of this action. In Experiment 2, pre-registered at https://osf.io/a5byn/, infants (M=`r exp2.info$mean` days, range=`r exp2.info$min`-`r exp2.info$max`, `r exp2.info$f` female) were habituated to videos identical to H1, except that the person’s hand stopped 50 pixels away from the object, and the object changed state after a 0.5 delay (H3). At test, the person reached efficiently or inefficiently in the absence of the barrier with the same spatiotemporal gap (T2). This manipulation was inspired by past studies of causal perception (cite, cite), and asks whether infants' analysis of the causal structure of an action is critical to their understanding of this action as intentional. We found that infants looked equally between the efficient (M=`r summary.avg$look[5]`s, SD=`r summary.avg$sd[5]`) and inefficient (M=`r summary.avg$look[6]`s, SD=`r summary.avg$sd[6]`) reach (T2), B=`r model1.exp2.table$Estimate[2]`, p=`r model1.exp2.table$Pr...t..[2]`, mixed effects model with trial type as fixed effect and participants as a random intercept, a result that differed from infants’ responses to causally contingent videos, B=`r model1.exp12.table$Estimate[4]`, p=`r model1.exp12.table$Pr...t..[4]`, mixed effects model with fixed interaction between causality and trial type.
 
 ## Experiment 3
@@ -505,7 +529,7 @@ model0.exp3 <- lmer(formula = loglook ~ 1 + (1|subj_id),
 model1.exp3 <- lmer(formula = loglook ~ type * causal + (1|subj_id),
                      data = exp3.avg, REML=FALSE)
 model1.exp3.table <- data.frame(coef(summary(model1.exp3)))
-model1.exp13.ci <- gen.ci(model1.exp3)[4:6,]
+model1.exp3.ci <- gen.ci(model1.exp3)[3:6,]
 
 # standardized values
 model1.exp3.beta <- lmer(formula = scale(loglook) ~ type * causal + (1|subj_id),
@@ -524,6 +548,13 @@ plot(influence(model1.exp3, "subj_id"), which="cook",
 contrasts.exp3 <- difflsmeans(model1.exp3, test.effs="type:causal")[[1]]
 names(contrasts.exp3) <- str_replace_all(names(contrasts.exp3), ' ', '') # rename to fix issue with ` and - in Rmd
 names(contrasts.exp3) <- str_replace_all(names(contrasts.exp3), '-', '')
+```
+
+```{r exp3.table}
+exp3 <- kable(cbind(model1.exp3.betas,model1.exp3.table,model1.exp3.ci), col.names = c("beta", "b", "se", "df", "t", "p", "lower", "upper"))
+
+exp3.findings <- data.frame(cbind(model1.exp3.betas,model1.exp3.table,model1.exp3.ci))
+names(exp3.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
 ```
 
 Experiment 3 (N=`r length(unique(exp3.avg$subj_id))`; `r length(unique(exp3.avg$subj_id))/2` per condition) attempts to replicates the findings from Experiments 1 and 2 by asking whether infants only expect causally effective reaches to be efficient, relative to the same actions that are not spatiotemporally contingent. In this experiment, pre-registered at https://osf.io/f2hvd/, we randomly assigned infants (M=`r exp3.info$mean` days, range=`r exp3.info$min`-`r exp3.info$max`, `r exp3.info$f` female) to H1 and T1, or H2 and T2, which enables us to stringently compare infants' responses to the test displays as a function of causal information. Infants again looked to the events differently depending on whether the events were causal, B=`r model1.exp3.table$Estimate[4]`, p=`r model1.exp3.table$Pr...t..[4]`, mixed effects model with fixed interaction of causality and test event. Like in Experiment 1, infants looked longer at the inefficient reach (M=`r summary.avg$look[10]`s, SD=`r summary.avg$sd[10]`) versus the efficient reach (M=`r summary.avg$look[9]`s, SD=`r summary.avg$sd[9]`) when the person’s actions were causally effective, B=`r contrasts.exp3$Estimate[6]`, p=`r contrasts.exp3$pvalue[6]`, and as in Experiment 3, infants looked equally to the inefficient (M=`r summary.avg$look[8]`s, SD=`r summary.avg$sd[8]`) and efficient (M=`r summary.avg$look[7]`s, SD=`r summary.avg$sd[7]`) reach when her actions were causally non-contingent, B=`r contrasts.exp3$Estimate[1]`, p=`r contrasts.exp3$pvalue[1]`. Together, Experiments 1-3 show that pre-reaching infants apply the principle of efficiency (Gergely & Csibra, 2003) to reaching actions that they themselves have never experienced, and that they only apply this principle to actions that appear to cause changes in the world.
@@ -566,6 +597,15 @@ names(contrasts.exp45) <- str_replace_all(names(contrasts.exp45), ' ', '') # ren
 names(contrasts.exp45) <- str_replace_all(names(contrasts.exp45), '-', '')
 ```
 
+
+```{r exp45.table}
+exp45 <- kable(cbind(model1.exp45.betas,model1.exp45.table,model1.exp45.ci), col.names = c("beta", "b", "se", "df", "t", "p", "lower", "upper"))
+
+exp45.findings <- data.frame(cbind(model1.exp45.betas,model1.exp45.table,model1.exp45.ci))
+names(exp45.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
+```
+
+
 ```{r exp5.scs}
 exp5.scs <- lumi.raw.avg %>% filter(experiment == "Exp.5" | experiment == "SCS.Exp.3")
 
@@ -602,6 +642,15 @@ names(contrasts.exp5.scs) <- str_replace_all(names(contrasts.exp5.scs), '-', '')
 
 ```
 
+
+```{r exp5.scs.table}
+exp5.scs <- kable(cbind(model1.exp5.scs.betas,model1.exp5.scs.table,model1.exp5.scs.ci), col.names = c("beta", "b", "se", "df", "t", "p", "lower", "upper"))
+
+exp5.scs.findings <- data.frame(cbind(model1.exp5.scs.betas,model1.exp5.scs.table,model1.exp5.scs.ci))
+names(exp5.scs.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
+```
+
+
 ```{r exp4.scs}
 exp4.scs <- lumi.raw.avg %>% filter(experiment == "Exp.4" | experiment == "SCS.Exp.3")
 
@@ -612,7 +661,7 @@ model0.exp4.scs <- lmer(formula = loglook ~ 1 + (1|subj_id) + (1|experiment),
 model1.exp4.scs <- lmer(formula = loglook ~ type * experiment + (1|subj_id) + (1|experiment),
                      data = exp4.scs, REML=FALSE)
 model1.exp4.scs.table <- gen.m(model1.exp4.scs) 
-model1.exp4.scs.ci <-  gen.ci(model1.exp4.scs) 
+model1.exp4.scs.ci <-  gen.ci(model1.exp4.scs) [4:7,]
 
 # standardized values
 model1.exp4.scs.beta <- lmer(formula = scale(loglook) ~ type * experiment + (1|subj_id) + (1|experiment),
@@ -637,6 +686,14 @@ names(contrasts.exp4.scs) <- str_replace_all(names(contrasts.exp4.scs), ' ', '')
 names(contrasts.exp4.scs) <- str_replace_all(names(contrasts.exp4.scs), '-', '')
 
 ```
+
+```{r exp4.scs.table}
+exp4.scs <- kable(cbind(model1.exp4.scs.betas,model1.exp4.scs.table,model1.exp4.scs.ci), col.names = c("beta", "b", "se", "df", "t", "p", "lower", "upper"))
+
+exp4.scs.findings <- data.frame(cbind(model1.exp4.scs.betas,model1.exp4.scs.table,model1.exp4.scs.ci))
+names(exp4.scs.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
+```
+
 Why do infants succeed here without motor training, and fail in Skerry et al. (2013)? One possibility is that pre-reaching infants struggle to understand the causal structure of reaching for and retrieving an object without the relevant motor experience. Another possibility is that pre-reaching infants do not interpret the reach of a mittened hand, one that looks different from most hands they see, as intentional without the relevant experience of observing and experiencing their own mittened hands act causally during training (cite Woodward glove?). To test for this second possibility, we ran two additional experiments. In Experiment 4 (N=`r length(unique(exp4.avg$subj_id))`), infants (M=`r exp4.info$mean` days, range=`r exp4.info$min`-`r exp4.info$max`, `r exp4.info$f` female) were habituated and tested on events very similar to those from Skerry (H4, T3), where a person reaches for and picks up an object while wearing a white mitten. In Experiment 5 (N=`r length(unique(exp4.avg$subj_id))`), infants (M=`r exp5.info$mean` days, range=`r exp5.info$min`-`r exp5.info$max`, `r exp5.info$f` female) saw almost identical videos to those from Experiment 4 except that the person reached with a bare hand (H5, T4). ^[Experiments 4 and 5 were run before Exp 2 and 3, and before our lab began to pre-register experiments. As in Experiments 2 and 3, sample sizes, analyses, and exclusionary criteria for these 2 experiments were set prior to data collection.]
 
 We found that infants looked marginally longer at the inefficient (M=`r summary.avg$look[14]`, SD=`r summary.avg$sd[14]`) than the efficient (M=`r summary.avg$look[13]`, SD=`r summary.avg$sd[13]`) reach when a bare hand was reaching, B=`r contrasts.exp45$Estimate[1]`, p=`r contrasts.exp45$pvalue[1]/2`, and did not distinguish the inefficient (M=`r summary.avg$look[12]`, SD=`r summary.avg$sd[12]`) and efficient (M=`r summary.avg$look[11]`, SD=`r summary.avg$sd[11]`) action when a mittened hand was reaching, B=`r contrasts.exp45$Estimate[6]`, p=`r contrasts.exp45$pvalue[6]`. However, these two patterns of looking did not differ from each other, B=`r model1.exp45.table$Estimate[4]`, p=`r model1.exp45.table$Pr...t..[4]`, mixed effects model with fixed interaction between mitten and test trial, random intercept for participants.
@@ -676,6 +733,9 @@ model1.all.betas <- fixef(model1.all.beta)
 A.
 ```{r meta_table, include=TRUE}
 kable(cbind(model1.all.betas, model1.all.table, model1.all.ci), col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
+
+meta.findings <- data.frame(cbind(model1.all.betas, model1.all.table, model1.all.ci))
+names(meta.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
 ```
 B1-2.
 
@@ -792,25 +852,30 @@ To ask whether infants' attention during habituation was affected by experimenta
 # set contrasts for analysis - compare effects against the grand mean
 op <- options(contrasts = c("contr.sum", "contr.poly"))
 
-emodel.exp1 <- lm(loglook ~ hab * type * first.test + total_hab + sex + ageday, data = exp1.avg)
-emodel.exp1.table <- gen.lm(emodel.exp1)
-emodel.exp1.ci <- gen.ci(emodel.exp1)
+emodel.exp1 <- lmer(loglook ~ hab * type * first.test + total_hab + sex + ageday + (1|subj_id), REML=FALSE, data = exp1.avg)
+emodel.exp1.table <- gen.m(emodel.exp1)
+emodel.exp1.ci <- gen.ci(emodel.exp1)[3:13,]
+emodel.exp1.betas <- fixef(lmer(scale(loglook) ~ hab * type * first.test + scale(total_hab) + sex + scale(ageday) + (1|subj_id), REML = FALSE, data = exp1.avg))
 
-emodel.exp2 <- lm(loglook ~ type * first.test + total_hab + sex + ageday, data = exp2.avg)
-emodel.exp2.table <- gen.lm(emodel.exp2)
-emodel.exp2.ci <- gen.ci(emodel.exp2)
+emodel.exp2 <- lmer(loglook ~ type * first.test + total_hab + sex + ageday + (1|subj_id), REML = FALSE, data = exp2.avg)
+emodel.exp2.table <- gen.m(emodel.exp2)
+emodel.exp2.ci <- gen.ci(emodel.exp2)[3:9,]
+emodel.exp2.betas <- fixef(lmer(scale(loglook) ~ type * first.test + scale(total_hab) + sex + scale(ageday) + (1|subj_id), REML = FALSE, data = exp2.avg))
 
-emodel.exp3 <- lm(loglook ~ causal * type * first.test + total_hab + sex + ageday, data = exp3.avg)
-emodel.exp3.table <- gen.lm(emodel.exp3)
-emodel.exp3.ci <- gen.ci(emodel.exp3)
+emodel.exp3 <- lmer(loglook ~ causal * type * first.test + total_hab + sex + ageday + (1|subj_id), REML = FALSE, data = exp3.avg)
+emodel.exp3.table <- gen.m(emodel.exp3)
+emodel.exp3.ci <- gen.ci(emodel.exp3)[3:14,]
+emodel.exp3.betas <- fixef(lmer(scale(loglook) ~ causal * type * first.test + scale(total_hab) + sex + scale(ageday) + (1|subj_id), REML=FALSE, data = exp3.avg))
 
-emodel.exp4 <- lm(loglook ~ type * first.test + total_hab + sex + ageday, data = exp4.avg)
-emodel.exp4.table <- gen.lm(emodel.exp4)
-emodel.exp4.ci <- gen.ci(emodel.exp4)
+emodel.exp4 <- lmer(loglook ~ type * first.test + total_hab + sex + ageday + (1|subj_id), REML=FALSE, data = exp4.avg)
+emodel.exp4.table <- gen.m(emodel.exp4)
+emodel.exp4.ci <- gen.ci(emodel.exp4)[3:9,]
+emodel.exp4.betas <- fixef(lmer(scale(loglook) ~ type * first.test + scale(total_hab) + sex + scale(ageday) + (1|subj_id), REML=FALSE, data = exp4.avg))
 
-emodel.exp5 <- lm(loglook ~ type * first.test + total_hab + sex + ageday, data = exp5.avg)
-emodel.exp5.table <- gen.lm(emodel.exp5)
-emodel.exp5.ci <- gen.ci(emodel.exp5)
+emodel.exp5 <- lmer(loglook ~ type * first.test + total_hab + sex + ageday + (1|subj_id), REML = FALSE, data = exp5.avg)
+emodel.exp5.table <- gen.m(emodel.exp5)
+emodel.exp5.ci <- gen.ci(emodel.exp5)[3:9,]
+emodel.exp5.betas <- fixef(lmer(scale(loglook) ~ type * first.test + scale(total_hab) + sex + scale(ageday) + (1|subj_id), REML=FALSE, data = exp5.avg))
 ```
 
 To explore the additional effects of test trial order (inefficient or efficient first), attention during habituation, age in days, and sex on attention during test, we ran one linear model per experiment including an interaction between test event order and test event in Experiments 2, 4, and 5, an interaction between these factors and habituation in Experiment 1, and an interaction between these factors and causal contingency in Experiment 3. 
@@ -824,21 +889,41 @@ In Experiment 2, we also find that infants randomly assigned to look at the effi
 
 ### Experiment 1
 
-`r kable(cbind(emodel.exp1.table, emodel.exp1.ci), col.names = c("Estimate (B)", "Standard Error (SE)", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))`
+```{r}
+kable(cbind(emodel.exp1.betas, emodel.exp1.table, emodel.exp1.ci), col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
+```
+
+
 
 ### Experiment 2
 
-`r kable(cbind(emodel.exp2.table, emodel.exp2.ci), col.names = c("Estimate (B)", "Standard Error (SE)", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))`
+```{r}
+
+kable(cbind(emodel.exp2.betas, emodel.exp2.table, emodel.exp2.ci), col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
+
+```
+
 
 
 ### Experiment 3
 
-`r kable(cbind(emodel.exp3.table, emodel.exp3.ci), col.names = c("Estimate (B)", "Standard Error (SE)", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))`
+```{r}
+kable(cbind(emodel.exp3.betas, emodel.exp3.table, emodel.exp3.ci), col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
+
+```
+
+
 
 ### Experiment 4
 
-`r kable(cbind(emodel.exp4.table, emodel.exp4.ci), col.names = c("Estimate (B)", "Standard Error (SE)", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))`
+```{r}
+kable(cbind(emodel.exp4.betas, emodel.exp4.table, emodel.exp4.ci),col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
+```
+
+
 
 ### Experiment 5
 
-`r kable(cbind(emodel.exp5.table, emodel.exp5.ci), col.names = c("Estimate (B)", "Standard Error (SE)", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))`
+```{r}
+kable(cbind(emodel.exp5.betas, emodel.exp5.table, emodel.exp5.ci),col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
+```
