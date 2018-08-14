@@ -32,7 +32,7 @@ SCS 5 | 26 | effective | pick up |unconstrained | yes | yes |
 ***
 
 ```{r setup, include = FALSE}
-knitr::opts_chunk$set(comment = "##", echo=FALSE, warning=FALSE, message=FALSE, cache=TRUE, include=FALSE, dependson="lumi_wide")
+knitr::opts_chunk$set(comment = "##", echo=FALSE, warning=FALSE, message=FALSE, cache=FALSE, include=FALSE, dependson="lumi_wide")
 options(scipen = 0, digits = 3)
 ## load required packages
 ipak <- function (pkg) {
@@ -120,6 +120,7 @@ lumi.wide$pref <- relevel(lumi.wide$pref, ref = "eff")
 # section data based on dv
 lumi.prop.avg <- filter(lumi.long, type == "prop.ineff.all")
 lumi.raw.avg <- filter(lumi.long, type == "avg.eff" | type == "avg.ineff")
+lumi.raw.avg$type <- relevel(lumi.raw.avg$type, ref = "avg.ineff")
 lumi.prop.tp <- filter(lumi.long, type == "prop.ineff1" | type == "prop.ineff2" | type == "prop.ineff3")
 lumi.raw.tp <- filter(lumi.long, type == "ineff.1" | type == "ineff.2" | type == "ineff.3" | type == "eff.1" |type == "eff.2"| type == "eff.3")
 ```
@@ -296,7 +297,7 @@ fig2.raw +
   geom_errorbar(data = summary.avg, size = .5, width = 0, aes(ymin=look-ci, ymax=look+ci)) +
   facet_grid(~experiment+training+hab+goal+mitten+causal)+
   scale_x_discrete(labels = c("eff","ineff"))+
-  theme_linedraw(15)+
+  theme_linedraw(20)+
   theme(legend.position="none", axis.title.x=element_blank())
 ```
 B.
@@ -310,7 +311,7 @@ fig2.prop +
   ylab("Proportion Looking to Inefficient Reach") +
   xlab(element_blank())+
   geom_jitter(width = .05, alpha = 0.2)+
-  coord_cartesian(ylim = c(0,1)) +
+  coord_cartesian(ylim = c(0.2,0.8)) +
   stat_summary(fun.data = mean_cl_boot, geom = "errorbar", colour="black", position = position_dodge(width = 5), width = 0) +
   geom_hline(yintercept=0.5, alpha=0.4)+
   facet_grid(~experiment+training+hab+goal+mitten+causal)+
@@ -335,14 +336,9 @@ exp5.avg <-dplyr::filter(lumi.raw.avg, experiment == "Exp.5")
 exp45.avg <-dplyr::filter(lumi.raw.avg, experiment == "Exp.4" | experiment == "Exp.5")
 op <- options(contrasts = c("contr.treatment", "contr.poly")) # treatment contrasts
 
-# function for identifying influential observations, and then returning a new model without them
-# INPUTS: model = model name, data = dataset, and subj = column heading for observations
-# OUTPUT: model excluding influential subjects
-exclude.cooks <- function(model, data, subj) {
-  cooks <- cooks.distance(influence(model, subj))
-  cutoff <- 4/length(unique(data$subj))
-  new.model <- exclude.influence(model, grouping = subj, level=data[which(cooks > cutoff),]$subj)
-  return(new.model)
+# function that returns column of standardized betas from lmer model
+gen.beta <- function(model) {
+  return(t(fixef(model)))
 }
 
 # function that computes CIs and returns them in df
@@ -415,12 +411,12 @@ model0.exp1 <- lmer(formula = loglook ~ 1 + (1|subj_id),
 model1.exp1 <- lmer(formula = loglook ~ type * hab + (1|subj_id),
                data = exp1.avg, REML = FALSE)
 model1.exp1.table <- gen.m(model1.exp1)
-model1.exp1.ci <- gen.ci(model1.exp1)
+model1.exp1.ci <- gen.ci(model1.exp1)[3:6,]
 
 # standardized values
 model1.exp1.beta <- lmer(formula = scale(loglook) ~ type * hab + (1|subj_id),
                          data = exp1.avg, REML = FALSE)
-model1.exp1.beta.table <- gen.m(model1.exp1.beta)
+model1.exp1.betas <- fixef(model1.exp1.beta)
 
 # identify and check influence of observations
 plot(influence(model1.exp1, "subj_id"), which="cook",
@@ -444,7 +440,7 @@ names(contrasts.exp1.beta) <- str_replace_all(names(contrasts.exp1.beta), '-', '
 ```
 
 
-In Experiment 1 (N=`r length(unique(exp1.avg$subj_id))`; `r length(unique(exp1.avg$subj_id))/2` per condition), we asked whether 3-month-old infants (M=`r exp1.info$mean` days, range=`r exp1.info$min`-`r exp1.info$max`, `r exp1.info$f` female) expect a person to reach out and cause an object to change state efficiently. Half of infants were randomly assigned to habituate to a person who reached over a barrier (H1) and appeared to cause an object to light up by touching it, and then tested on efficient and inefficient reaches without the barrier (T1). The other half of infants habituated to the same reaches except that the barrier was located beyond the goal object, out of the person's way (H2), and viewed the same test events Infants responded differently to the test events across these two habituation conditions, [`r model1.exp1.ci$lower[6]`, `r model1.exp1.ci$upper[6]`], B=`r model1.exp1.table$est[4]`, ß=`r model1.exp1.beta.table$est[4]`, p=`r model1.exp1.table$p[4]`, mixed effects model with fixed interaction between habituation and test event and random intercept for participants. We found that infants looked longer at the inefficient action (M=`r summary.avg$look[2]`s, SD=`r summary.avg$sd[2]`) than the efficient action (M=`r summary.avg$look[1]`s, SD=`r summary.avg$sd[1]`), [`r contrasts.exp1$LowerCI[1]`, `r contrasts.exp1$UpperCI[1]`], B=`r contrasts.exp1$Estimate[1]`, ß=`r contrasts.exp1.beta$Estimate[1]`, p=`r contrasts.exp1$pvalue[1]`. And critically, this looking preference cannot be attributed to low-level preferences for the curvilinear reach, because infants who were randomly assigned to habituate to identical videos without the barrier in the way (H2) looked equally to the inefficient (M=`r summary.avg$look[4]`s, SD=`r summary.avg$sd[4]`) and efficient (M=`r summary.avg$look[3]`s, SD=`r summary.avg$sd[3]`) actions, [`r contrasts.exp1$LowerCI[6]`, `r contrasts.exp1$UpperCI[6]`], B=`r contrasts.exp1$Estimate[6]`, ß=`r contrasts.exp1.beta$Estimate[6]`, p=`r contrasts.exp1$pvalue[6]`. 
+In Experiment 1 (N=`r length(unique(exp1.avg$subj_id))`; `r length(unique(exp1.avg$subj_id))/2` per condition), we asked whether 3-month-old infants (M=`r exp1.info$mean` days, range=`r exp1.info$min`-`r exp1.info$max`, `r exp1.info$f` female) expect a person to reach out and cause an object to change state efficiently. Half of infants were randomly assigned to habituate to a person who reached over a barrier (H1) and appeared to cause an object to light up by touching it, and then tested on efficient and inefficient reaches without the barrier (T1). The other half of infants habituated to the same reaches except that the barrier was located beyond the goal object, out of the person's way (H2), and viewed the same test events Infants responded differently to the test events across these two habituation conditions, [`r model1.exp1.ci$lower[6]`, `r model1.exp1.ci$upper[6]`], B=`r model1.exp1.table$est[4]`, ß=`r model1.exp1.betas$est[4]`, p=`r model1.exp1.table$p[4]`, mixed effects model with fixed interaction between habituation and test event and random intercept for participants. We found that infants looked longer at the inefficient action (M=`r summary.avg$look[2]`s, SD=`r summary.avg$sd[2]`) than the efficient action (M=`r summary.avg$look[1]`s, SD=`r summary.avg$sd[1]`), [`r contrasts.exp1$LowerCI[1]`, `r contrasts.exp1$UpperCI[1]`], B=`r contrasts.exp1$Estimate[1]`, ß=`r contrasts.exp1.beta$Estimate[1]`, p=`r contrasts.exp1$pvalue[1]`. And critically, this looking preference cannot be attributed to low-level preferences for the curvilinear reach, because infants who were randomly assigned to habituate to identical videos without the barrier in the way (H2) looked equally to the inefficient (M=`r summary.avg$look[4]`s, SD=`r summary.avg$sd[4]`) and efficient (M=`r summary.avg$look[3]`s, SD=`r summary.avg$sd[3]`) actions, [`r contrasts.exp1$LowerCI[6]`, `r contrasts.exp1$UpperCI[6]`], B=`r contrasts.exp1$Estimate[6]`, ß=`r contrasts.exp1.beta$Estimate[6]`, p=`r contrasts.exp1$pvalue[6]`. 
 
 ## Experiment 2
 ```{r exp2}
@@ -459,10 +455,12 @@ model0.exp2 <- lmer(formula = loglook ~ 1 + (1|subj_id),
 model1.exp2 <- lmer(formula = loglook ~ type + (1|subj_id),
                data = exp2.avg, REML = FALSE)
 model1.exp2.table <- data.frame(coef(summary(model1.exp2)))
+model1.exp2.ci <- gen.ci(model1.exp2)[3:4,]
 
 # standardized values
-model1.exp1.beta <- lmer(formula = scale(loglook) ~ type + (1|subj_id),
+model1.exp2.beta <- lmer(formula = scale(loglook) ~ type + (1|subj_id),
                          data = exp2.avg, REML = FALSE)
+model1.exp2.betas <- fixef(model1.exp2.beta)
 
 # identify and check influence of observations
 # model.exp2.cooks <- exclude.cooks(model1.exp2, exp2.avg, "subj_id")
@@ -480,6 +478,12 @@ causality12 <- lumi.raw.avg %>%
 model1.exp12 <- lmer(formula = loglook ~ type * causal + (1|subj_id) + (1|experiment),
                      data = causality12, REML=FALSE)
 model1.exp12.table <- data.frame(coef(summary(model1.exp12)))
+model1.exp12.ci <- gen.ci(model1.exp12)[4:7,]
+
+# standardized betas
+model1.exp12 <- lmer(formula = scale(loglook) ~ type * causal + (1|subj_id) + (1|experiment),
+                     data = causality12, REML=FALSE)
+model1.exp12.betas <- fixef(model1.exp12)
 
 # look at contrasts within each caual condition
 contrasts.exp12 <- difflsmeans(model1.exp12, test.effs="type:causal")[[1]]
@@ -501,10 +505,12 @@ model0.exp3 <- lmer(formula = loglook ~ 1 + (1|subj_id),
 model1.exp3 <- lmer(formula = loglook ~ type * causal + (1|subj_id),
                      data = exp3.avg, REML=FALSE)
 model1.exp3.table <- data.frame(coef(summary(model1.exp3)))
+model1.exp13.ci <- gen.ci(model1.exp3)[4:6,]
 
 # standardized values
 model1.exp3.beta <- lmer(formula = scale(loglook) ~ type * causal + (1|subj_id),
                      data = exp3.avg, REML=FALSE)
+model1.exp3.betas <- fixef(model1.exp3.beta)
 
 # identify and check influence of observations
 # model.exp3.cooks <- exclude.cooks(model1.exp3, exp3.avg, exp3.avg$subj_id)
@@ -534,11 +540,13 @@ model0.exp45 <- lmer(formula = loglook ~ 1 + (1|subj_id) + (1|experiment),
 
 model1.exp45 <- lmer(formula = loglook ~ type * mitten + (1|subj_id) + (1|experiment),
                      data = exp45.avg, REML=FALSE)
-model1.exp45.table <- data.frame(coef(summary(model1.exp45)))
+model1.exp45.table <- gen.m(model1.exp45)
+model1.exp45.ci <- gen.ci(model1.exp45)[4:7,]
 
 # standardized values
 model1.exp45.beta <- lmer(formula = scale(loglook) ~ type * mitten + (1|subj_id) + (1|experiment),
                      data = exp45.avg, REML=FALSE)
+model1.exp45.betas <- fixef(model1.exp45.beta)
 
 # identify and check influence of observations
 # model1.exp45.cooks <- exclude.cooks(model1.exp45, exp45.avg, "subj_id")
@@ -568,15 +576,25 @@ model0.exp5.scs <- lmer(formula = loglook ~ 1 + (1|subj_id) + (1|experiment),
 
 model1.exp5.scs <- lmer(formula = loglook ~ type * mitten + (1|subj_id) + (1|experiment),
                      data = exp5.scs, REML=FALSE)
-model1.exp5.scs.table <- data.frame(coef(summary(model1.exp5.scs)))
+model1.exp5.scs.table <- gen.m(model1.exp5.scs)
+model1.exp5.scs.ci <- gen.ci(model1.exp5.scs)[4:7,]
 
 # standardized values
 model1.exp5.scs.beta <- lmer(formula = scale(loglook) ~ type * mitten + (1|subj_id) + (1|experiment),
                      data = exp5.scs, REML=FALSE)
+model1.exp5.scs.betas <- fixef(model1.exp5.scs.beta)
 
 # identify and check influence of observations
-model1.exp4.scs.cooks <- exclude.cooks(model1.exp5.scs, exp5.scs, "subj_id")
+plot(influence(model1.exp5.scs, "subj_id"), which="cook",
+     cutoff=4/40, sort=TRUE,
+     xlab="Cook´s Distance",
+     ylab="Subject ID")
+# one identified
 
+model1.exp5.scs.cooks <- lmer(formula = loglook ~ type * mitten + (1|subj_id) + (1|experiment),
+                     data = filter(exp5.scs, subj_id != "SCS_S3_12"), REML=FALSE)
+summary(model1.exp5.scs.cooks)
+                     
 # look at contrasts within each caual condition
 contrasts.exp5.scs <- difflsmeans(model1.exp5.scs, test.effs="type:mitten")[[1]]
 names(contrasts.exp5.scs) <- str_replace_all(names(contrasts.exp5.scs), ' ', '') # rename to fix issue with ` and - in Rmd
@@ -593,14 +611,25 @@ model0.exp4.scs <- lmer(formula = loglook ~ 1 + (1|subj_id) + (1|experiment),
 
 model1.exp4.scs <- lmer(formula = loglook ~ type * experiment + (1|subj_id) + (1|experiment),
                      data = exp4.scs, REML=FALSE)
-model1.exp4.scs.table <- data.frame(coef(summary(model1.exp4.scs)))
+model1.exp4.scs.table <- gen.m(model1.exp4.scs) 
+model1.exp4.scs.ci <-  gen.ci(model1.exp4.scs) 
 
 # standardized values
 model1.exp4.scs.beta <- lmer(formula = scale(loglook) ~ type * experiment + (1|subj_id) + (1|experiment),
                      data = exp4.scs, REML=FALSE)
+model1.exp4.scs.betas <- fixef(model1.exp4.scs.beta)
 
 # identify and check influence of observations
 model1.exp4.scs.cooks <- exclude.cooks(model1.exp4.scs, exp4.scs, "subj_id")
+plot(influence(model1.exp4.scs, "subj_id"), which="cook",
+     cutoff=4/40, sort=TRUE,
+     xlab="Cook´s Distance",
+     ylab="Subject ID")
+# 2 subjects identified
+
+model1.exp4.scs.cooks <- lmer(formula = loglook ~ type * experiment + (1|subj_id) + (1|experiment),
+                     data = filter(exp4.scs, subj_id != "SCS_S3_12" & subj_id != "S4_9"), REML=FALSE)
+summary(model1.exp4.scs.cooks)
 
 # look at contrasts within each caual condition
 contrasts.exp4.scs <- difflsmeans(model1.exp4.scs, test.effs="type:experiment")[[1]]
@@ -632,15 +661,13 @@ lumi.wide$training <- factor(lumi.wide$training, levels = c("effective.training"
 lumi.wide$causal <- relevel(lumi.wide$causal, ref = "yes.causal")
 
 # full exploratory model
-model1.all <- lmer(formula = prop.ineff.all ~ training + hab + goal + mitten + causal + (1+first.test|experiment) + (1|ageday) + (1|sex) + (1|paper), data = lumi.wide)
+model1.all <- lmer(formula = prop.ineff.all ~ training + hab + goal + mitten + causal + (1|experiment) + (1|ageday) + (1|sex) + (1|paper), data = lumi.wide)
 model1.all.table <- gen.m(model1.all)
-# model1.all.ci <- gen.ci(model1.all)
+model1.all.ci <- gen.ci(model1.all)[6:12,]
 
-# address influential observations
-# plot(influence(model1.all, "subj_id"), which="cook",
-#      cutoff=4/length(unique(lumi.wide$subj_id)), sort=TRUE,
-#      xlab="Cook´s Distance",
-#      ylab="Subject ID")
+# standardized values
+model1.all.beta <- lmer(formula = scale(prop.ineff.all) ~ training + hab + goal + mitten + causal + (1|experiment) + (1|ageday) + (1|sex) + (1|paper), data = lumi.wide)
+model1.all.betas <- fixef(model1.all.beta)
 
 ```
 
@@ -648,11 +675,11 @@ model1.all.table <- gen.m(model1.all)
 
 A.
 ```{r meta_table, include=TRUE}
-kable(cbind(model1.all.table))
+kable(cbind(model1.all.betas, model1.all.table, model1.all.ci), col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
 ```
 B1-2.
 
-```{r meta_figure, include=TRUE, fig.width=12}
+```{r meta_figure, include=TRUE, fig.width=12, cache=FALSE}
 # two ways of plotting: first, plotting model effects
 plot_model(model1.all, sort.est=TRUE, show.values=TRUE, digits=3, colors = "bw",  title = "prop.ineff.all ~ training + hab + goal + mitten + causal + (1+first.test|experiment) + (1|ageday) + (1|sex) + (1|paper)")
 
@@ -797,20 +824,21 @@ In Experiment 2, we also find that infants randomly assigned to look at the effi
 
 ### Experiment 1
 
-`r kable(cbind(emodel.exp1.table, emodel.exp1.ci))`
+`r kable(cbind(emodel.exp1.table, emodel.exp1.ci), col.names = c("Estimate (B)", "Standard Error (SE)", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))`
 
 ### Experiment 2
 
-`r kable(cbind(emodel.exp2.table, emodel.exp2.ci))`
+`r kable(cbind(emodel.exp2.table, emodel.exp2.ci), col.names = c("Estimate (B)", "Standard Error (SE)", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))`
+
 
 ### Experiment 3
 
-`r kable(cbind(emodel.exp3.table, emodel.exp3.ci))`
+`r kable(cbind(emodel.exp3.table, emodel.exp3.ci), col.names = c("Estimate (B)", "Standard Error (SE)", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))`
 
 ### Experiment 4
 
-`r kable(cbind(emodel.exp4.table, emodel.exp4.ci))`
+`r kable(cbind(emodel.exp4.table, emodel.exp4.ci), col.names = c("Estimate (B)", "Standard Error (SE)", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))`
 
 ### Experiment 5
 
-`r kable(cbind(emodel.exp5.table, emodel.exp5.ci))`
+`r kable(cbind(emodel.exp5.table, emodel.exp5.ci), col.names = c("Estimate (B)", "Standard Error (SE)", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))`
