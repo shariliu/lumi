@@ -366,40 +366,18 @@ gen.lm <- function(model) {
 ages <- function(longdata) {
   longdata %>% summarize(mean = mean(ageday), min=range(ageday)[1], max=range(ageday)[2], f=sum(sex=="f")/2)
 }
+
+# function that returns formatted result from lme4/lmerTest table
+report <- function(table, index, places) {
+  result <- paste("[", round(table$lower[index], places), ",", round(table$upper[index], places), "], ß=", round(table$beta[index], places), ", B(SE)=", round(table$b[index],places), "(", round(table$se[index],places), "), ", "p=", round(table$p[index],places), sep = "")
+  return(result)
+}
 ```
+
 
 # Results
-
-## Reliability
-```{r reliability}
-exp1.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.1")$newlook, filter(lumi.rel, experiment == "Exp.1")$look.orig), model = "twoway", type = "agreement", unit = "single")
-exp2.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.2")$newlook, filter(lumi.rel, experiment == "Exp.2")$look.orig), model = "twoway", type = "agreement", unit = "single")
-exp3.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.3")$newlook, filter(lumi.rel, experiment == "Exp.3")$look.orig), model = "twoway", type = "agreement", unit = "single")
-exp4.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.4")$newlook, filter(lumi.rel, experiment == "Exp.4")$look.orig), model = "twoway", type = "agreement", unit = "single")
-exp5.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.5")$newlook, filter(lumi.rel, experiment == "Exp.5")$look.orig), model = "twoway", type = "agreement", unit = "single")
-
-```
-
-
-To assess reliability, 50% of test trials from participants across Experiments 1-5 (`r length(unique(lumi.wide$subj_id))/2` participants, `r nrow(lumi.rel)` trials) were randomly selected and coded by additional researchers who were unaware of experimental condition, and test trial order. The intraclass correlation coefficient (ICC) between the original data, and this newly coded data, was `r exp1.rel$value` [`r exp1.rel$lbound`, `r exp1.rel$ubound`], `r exp2.rel$value` [`r exp2.rel$lbound`, `r exp2.rel$ubound`], `r exp3.rel$value` [`r exp3.rel$lbound`, `r exp3.rel$ubound`], `r exp4.rel$value` [`r exp4.rel$lbound`, `r exp4.rel$ubound`], `r exp5.rel$value` [`r exp5.rel$lbound`, `r exp5.rel$ubound`], for Experiments 1 through 5, respectively.
-
-## Exclusion info
-
-**Table S1.** Tally of infants who participated in Experiments 1-5 but were excluded in our final sample. These exclusion criteria were set prior to the start of data collection, but vary slightly by experiment (e.g. we relaxed our definition of inattentiveness from excluding all data from a participant if they missed a test trial in Experiment 1, to excluding data from just that trial in Experiments 2-5). 
-
-Experiment | Fussiness | Inattentiveness | Caregiver Interference | Experimenter/Coding Error | Technical Failure | Total 
----------- | --------- | --------------- | ---------------------- | ------------------------- | ----------------- | -----
-Exp.1 | 9 | 5 | 1 | 12 | 3 | 30
-Exp.2 | 0 | 0 | 0 | 2 | 0 | 2
-Exp.3 | 6 | 0 | 0 | 2 | 0 | 8
-Exp.4 | 7 | 0 | 0 | 2 | 0 | 7
-Exp.5 | 6 | 0 | 0 | 1 | 2 | 9
-**Total** | 28 | 5 | 1 | 19 | 5 | 50
-***
-
-## Results
-### Infants' analysis of causal vs non-causal actions
-#### Experiment 1
+## Infants' analysis of causal vs non-causal actions
+### Experiment 1
 ```{r exp1}
 # participant info
 exp1.info <- ages(exp1.avg)
@@ -432,13 +410,9 @@ model1.exp1.cooks <- lmer(formula = loglook ~ type * hab + (1|subj_id),
 summary(model1.exp1.cooks)
 
 # look at contrasts within each habituation condition
-contrasts.exp1 <- difflsmeans(model1.exp1, test.effs="type:hab")[[1]]
-names(contrasts.exp1) <- str_replace_all(names(contrasts.exp1), ' ', '') # rename to fix issue with ` and - in Rmd
-names(contrasts.exp1) <- str_replace_all(names(contrasts.exp1), '-', '')
+contrasts.exp1 <- cbind(difflsmeans(model1.exp1.beta, test.effs="type:hab")[[1]][,1], difflsmeans(model1.exp1, test.effs="type:hab")[[1]])
+names(contrasts.exp1) <- c("beta", "b", "se", "df", "t", "lower", "upper", "p")
 
-contrasts.exp1.beta <- difflsmeans(model1.exp1.beta, test.effs="type:hab")[[1]]
-names(contrasts.exp1.beta) <- str_replace_all(names(contrasts.exp1.beta), ' ', '') # rename to fix issue with ` and - in Rmd
-names(contrasts.exp1.beta) <- str_replace_all(names(contrasts.exp1.beta), '-', '')
 ```
 
 ```{r exp1.table}
@@ -449,11 +423,11 @@ names(exp1.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
 
 ```
 
-In Experiment 1 (N=40; 20 per condition), we asked whether 3-month-old infants (M=107.675 days, range=91-122, 23 female) expect a person to reach out and cause an object to change state efficiently. Half of infants were randomly assigned to repeatedly view video clips of a person who reached over a barrier and appeared to cause an object to light up by touching it (H1), while the other half of infants viewed the same reaches except that the barrier was located beyond the goal object, out of the person’s way (H2): a motion that does not appear to adults to be efficiently directed to the goal object.  Then, the infants in both conditions viewed the same pair of alternating test events, in which the barrier was removed and the person reached either efficiently on a novel, direct path or inefficiently on the familiar, indirect path (T1). A mixed effects model with a fixed interaction between habituation and test event and a random intercept for participant identity revealed that infants responded differently to the test events across these two habituation conditions, [-0.657, -0.115], B=-0.386, ß=-0.596, p=0.007. Contrasts from this model revealed that when the person’s reaches were initially constrained by a barrier, infants looked longer at the inefficient action (M=15.448s, SD=2.942) than the efficient action (M=12.368s, SD=2.942) at test, [-0.451, -0.065], B=-0.258, ß=-0.398, p=0.01. Critically, this looking preference cannot be attributed to low-level responses to the curvilinear reach, because infants in the other condition of the experiment, who were randomly assigned to habituate to otherwise identical videos in which the the barrier was behind the object (H2), looked equally to the inefficient (M=8.788s, SD=3.301) and efficient (M=10.104s, SD=3.301) actions, [-0.065, 0.321], B=0.128, ß=0.198, p=0.186.
+In Experiment 1 (N=`r length(unique(exp1.avg$subj_id))`; `r length(unique(exp1.avg$subj_id))/2` per condition), we asked whether 3-month-old infants (M=`r exp1.info$mean` days, range=`r exp1.info$min`-`r exp1.info$max`, `r exp1.info$f` female) expect a person to reach out and cause an object to change state efficiently. Half of infants were randomly assigned to repeatedly view video clips of a person who reached over a barrier and appeared to cause an object to light up by touching it (H1), while the other half of infants viewed the same reaches except that the barrier was located beyond the goal object, out of the person’s way (H2): a motion that does not appear to adults to be efficiently directed to the goal object.  Then, the infants in both conditions viewed the same pair of alternating test events, in which the barrier was removed and the person reached either efficiently on a novel, direct path or inefficiently on the familiar, indirect path (T1). A mixed effects model with a fixed interaction between habituation and test event and a random intercept for participant identity revealed that infants responded differently to the test events across these two habituation conditions, `r report(exp1.findings, 4, 3)`. Contrasts from this model revealed that when the person’s reaches were initially constrained by a barrier, infants looked longer at the inefficient action (M=`r summary.avg$look[2]`s, SE=`r summary.avg$se[2]`) than the efficient action (M=`r summary.avg$look[1]`s, SE=`r summary.avg$se[1]`) at test, `r report(contrasts.exp1, 2, 3) `. Critically, this looking preference cannot be attributed to low-level responses to the curvilinear reach, because infants in the other condition of the experiment, who were randomly assigned to habituate to otherwise identical videos in which the the barrier was behind the object (H2), looked equally to the inefficient (M=`r summary.avg$look[4]`s, SE=`r summary.avg$se[4]`) and efficient (M=`r summary.avg$look[3]`s, SE=`r summary.avg$se[3]`) actions, `r report(contrasts.exp1, 6, 3)`.
 
 
 
-#### Experiment 2
+### Experiment 2
 ```{r exp2}
 # participant info
 exp2.info <- ages(exp2.avg)
@@ -519,7 +493,7 @@ names(exp12.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
 
 In Experiment 2 (N=20), we asked whether infants’ analysis of the causal structure of an action is critical to their understanding of this action as intentional, as suggested by past studies of causal perception (Michotte 1963; Muentener and Carey 2010; Leslie 1984).  We tested whether infants’ sensitivity to the efficiency of the reaching action from Experiment 1 depended on their construal of the person as a causal agent (an agent contacting an object, thereby changing its state) or on lower-level scene features (an agent reaching towards an object that happens to illuminate), by manipulating the spatiotemporal contingency of this action. In Experiment 2, pre-registered at https://osf.io/a5byn/, infants (M=106.7 days, range=93-121, 12 female) were habituated to videos identical to H1, except that the person’s hand stopped 50 pixels above the object (approximately 2 cm on the presentation screen), and the object changed state after a 0.5 second delay. At test, the person reached efficiently or inefficiently in the absence of the barrier with the same point above the object as in habituation trials (T2). We found that infants looked equally between the efficient (M=16.38s, SD=5.024) and inefficient (M=15.306s, SD=5.024) reach, B=-0.055, p=0.649, mixed effects model with trial type as fixed effect and participants as a random intercept, a result that differed from infants’ responses to the causally effective reaches in Experiment 1 (H1), B=0.313, p=0.049, mixed effects model with fixed interaction between causality and trial type.
 
-#### Experiment 3
+### Experiment 3
 ```{r exp3}
 # participant info
 exp3.info <- ages(exp3.avg)
@@ -561,8 +535,8 @@ names(exp3.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
 
 Experiment 3 (N=52; 26 per condition) attempted to replicate the findings from Experiments 1 and 2 that infants expect causally effective reaches to be efficient, but do not expect efficiency when presented with same actions that are not spatiotemporally continuous. In this experiment, pre-registered at https://osf.io/f2hvd/, we randomly assigned infants (M=107.154 days, range=92-121, 20 female) to H1 and T1, or H3 and T2: a design that enables us to directly compare infants’ responses to the test displays as a function of causal information, using experimenters who are blind not only to the test events but to the infants' habituation condition. The findings of this experiment replicated those of the previous two studies:  Infants' tendency to view the agent's actions as efficiently directed to the goal object again depended on the presentation of actions that elicit an impression of contact causality, in which the agent's hand contacted the object at the time of the object's change of state, B=0.5, p=0.003, mixed effects model with fixed interaction of causality and test event. As in Experiment 1, infants looked longer at the inefficient reach (M=12.166s, SD=2.996) than the efficient reach (M=7.791s, SD=2.996) when the person’s actions were causally effective, B=-0.436, p=310^{-4}, and as in Experiment 2, infants looked equally to the inefficient (M=11.395s, SD=4.17) and efficient (M=12.888s, SD=4.17) reaches when the gap between her hand and the object suggested that her action was causally ineffective, B=0.064, p=0.567. Together, Experiments 1-3 show that pre-reaching infants apply the principle of efficiency (Gergely & Csibra, 2003) to reaching actions that they themselves have never experienced, and that they only apply this principle to actions that appear to cause changes in the world.
 
-### Infants’ analysis of entrainment actions
-#### Experiments 4 and 5
+## Infants’ analysis of entrainment actions
+### Experiments 4 and 5
 ```{r exp45}
 # participant info
 exp4.info <- ages(exp4.avg)
@@ -706,9 +680,9 @@ We found that infants looked marginally longer at the inefficient (M=9.715, SD=2
 We also compared these results against those from SCS Experiment 3, wherein infants received no mittens training and viewed a person reaching with a mittened hand. The results of Experiment 5 (no mitten) differed from those in SCS Experiment 3 (mitten), B=-0.292, p=0.021, whereas the results from Experiment 4 (mitten) did not differ from those in SCS Experiment 3 (mitten), B=-0.165, p=0.205. This finding accords with reports that young infants trained with mittens view an agent's reach as goal-directed only if the agent wears the same mittens and interacts with the same objects as they did during training (Gerson & Woodward, 2014; Amanda Woodward, 2008). Nevertheless, the differences in infants' responses to gloved and ungloved hands are not robust in our studies and merit further investigation.  
 
 
-### Meta-analytic Results: Experiments 1-5 and SCS
+## Meta-analytic Results: Experiments 1-5 and SCS
 
-	Across Experiments 1-5, we found that pre-reaching infants apply expectations of efficient action to a person who pursues the goal of causing a change in an object while wearing a mitten, but do not apply the same expectation to the same person wearing the same mitten when she picks up the same object. Thus, we suggest that one key difference between the state change events we used in the present experiments, and the pickup events used in SCS and Experiments 4-5, is the causal transparency of these actions: Three-month-old infants do not know how to reach for and grasp objects, and thus may struggle to understand how grasping an object could cause it to rise and move closer to the person reaching for it, thereby fulfilling the goal of the agent to retrieve it. Indeed, infants’ own ability to produce power grasps (the actions tested in Experiment 4 and 5 and in SCS) predicts their ability to represent such grasps as directed towards an object (Bakker et al., 2015). Although the infants in our experiments will not master these grasping actions until around 5 months of age (von Hofsten, 1980), these infants may nevertheless possess the intuition that causal agents behave efficiently, an expectation they apply to events in which an object changes state on contact with an agent's hand.
+Across Experiments 1-5, we found that pre-reaching infants apply expectations of efficient action to a person who pursues the goal of causing a change in an object while wearing a mitten, but do not apply the same expectation to the same person wearing the same mitten when she picks up the same object. Thus, we suggest that one key difference between the state change events we used in the present experiments, and the pickup events used in SCS and Experiments 4-5, is the causal transparency of these actions: Three-month-old infants do not know how to reach for and grasp objects, and thus may struggle to understand how grasping an object could cause it to rise and move closer to the person reaching for it, thereby fulfilling the goal of the agent to retrieve it. Indeed, infants’ own ability to produce power grasps (the actions tested in Experiment 4 and 5 and in SCS) predicts their ability to represent such grasps as directed towards an object (Bakker et al., 2015). Although the infants in our experiments will not master these grasping actions until around 5 months of age (von Hofsten, 1980), these infants may nevertheless possess the intuition that causal agents behave efficiently, an expectation they apply to events in which an object changes state on contact with an agent's hand.
 
 To assess the unique effects of our experimental manipulations, and to compare our data directly to those from SCS, we performed a meta-analysis over the 12 conditions (total N=264) from these two papers. Our analytic approach allows us to assess the independent effects of a wide array of manipulations, including variations in motor training, habituation, goal, and surface properties, on infants’ expectations about efficient reaching, while controlling participant variables like age and sex, and also modeling the nested structure of the data (e.g. looks clustered within experiments and within papers). For ease of interpretation, we use average proportion looking to the inefficient action in this analysis, following SCS.
 
@@ -889,7 +863,7 @@ In Experiment 2, we also find that infants randomly assigned to look at the effi
 
 ### Experiment 1
 
-```{r}
+```{r, include = TRUE}
 kable(cbind(emodel.exp1.betas, emodel.exp1.table, emodel.exp1.ci), col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
 ```
 
@@ -897,7 +871,7 @@ kable(cbind(emodel.exp1.betas, emodel.exp1.table, emodel.exp1.ci), col.names = c
 
 ### Experiment 2
 
-```{r}
+```{r, include = TRUE}
 
 kable(cbind(emodel.exp2.betas, emodel.exp2.table, emodel.exp2.ci), col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
 
@@ -907,7 +881,7 @@ kable(cbind(emodel.exp2.betas, emodel.exp2.table, emodel.exp2.ci), col.names = c
 
 ### Experiment 3
 
-```{r}
+```{r, include = TRUE}
 kable(cbind(emodel.exp3.betas, emodel.exp3.table, emodel.exp3.ci), col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
 
 ```
@@ -916,7 +890,7 @@ kable(cbind(emodel.exp3.betas, emodel.exp3.table, emodel.exp3.ci), col.names = c
 
 ### Experiment 4
 
-```{r}
+```{r, include = TRUE}
 kable(cbind(emodel.exp4.betas, emodel.exp4.table, emodel.exp4.ci),col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
 ```
 
@@ -924,6 +898,33 @@ kable(cbind(emodel.exp4.betas, emodel.exp4.table, emodel.exp4.ci),col.names = c(
 
 ### Experiment 5
 
-```{r}
+```{r, include = TRUE}
 kable(cbind(emodel.exp5.betas, emodel.exp5.table, emodel.exp5.ci),col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
 ```
+
+## Reliability
+```{r reliability}
+exp1.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.1")$newlook, filter(lumi.rel, experiment == "Exp.1")$look.orig), model = "twoway", type = "agreement", unit = "single")
+exp2.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.2")$newlook, filter(lumi.rel, experiment == "Exp.2")$look.orig), model = "twoway", type = "agreement", unit = "single")
+exp3.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.3")$newlook, filter(lumi.rel, experiment == "Exp.3")$look.orig), model = "twoway", type = "agreement", unit = "single")
+exp4.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.4")$newlook, filter(lumi.rel, experiment == "Exp.4")$look.orig), model = "twoway", type = "agreement", unit = "single")
+exp5.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.5")$newlook, filter(lumi.rel, experiment == "Exp.5")$look.orig), model = "twoway", type = "agreement", unit = "single")
+
+```
+
+
+To assess reliability, 50% of test trials from participants across Experiments 1-5 (`r length(unique(lumi.wide$subj_id))/2` participants, `r nrow(lumi.rel)` trials) were randomly selected and coded by additional researchers who were unaware of experimental condition, and test trial order. The intraclass correlation coefficient (ICC) between the original data, and this newly coded data, was `r exp1.rel$value` [`r exp1.rel$lbound`, `r exp1.rel$ubound`], `r exp2.rel$value` [`r exp2.rel$lbound`, `r exp2.rel$ubound`], `r exp3.rel$value` [`r exp3.rel$lbound`, `r exp3.rel$ubound`], `r exp4.rel$value` [`r exp4.rel$lbound`, `r exp4.rel$ubound`], `r exp5.rel$value` [`r exp5.rel$lbound`, `r exp5.rel$ubound`], for Experiments 1 through 5, respectively.
+
+## Exclusion info
+
+**Table S1.** Tally of infants who participated in Experiments 1-5 but were excluded in our final sample. These exclusion criteria were set prior to the start of data collection, but vary slightly by experiment (e.g. we relaxed our definition of inattentiveness from excluding all data from a participant if they missed a test trial in Experiment 1, to excluding data from just that trial in Experiments 2-5). 
+
+Experiment | Fussiness | Inattentiveness | Caregiver Interference | Experimenter/Coding Error | Technical Failure | Total 
+---------- | --------- | --------------- | ---------------------- | ------------------------- | ----------------- | -----
+Exp.1 | 9 | 5 | 1 | 12 | 3 | 30
+Exp.2 | 0 | 0 | 0 | 2 | 0 | 2
+Exp.3 | 6 | 0 | 0 | 2 | 0 | 8
+Exp.4 | 7 | 0 | 0 | 2 | 0 | 7
+Exp.5 | 6 | 0 | 0 | 1 | 2 | 9
+**Total** | 28 | 5 | 1 | 19 | 5 | 50
+***
