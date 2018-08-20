@@ -296,7 +296,7 @@ fig2.raw +
   geom_line(alpha = 0.1, aes(group = subj_id))+
   geom_errorbar(data = summary.avg, size = .5, width = 0, aes(ymin=look-ci, ymax=look+ci)) +
   facet_grid(~experiment+training+hab+goal+mitten+causal)+
-  scale_x_discrete(labels = c("eff","ineff"))+
+  scale_x_discrete(labels = c("ineff","eff"))+
   theme_bw(14)+
   theme(legend.position="none", axis.title.x=element_blank())
 ```
@@ -314,7 +314,7 @@ fig2.prop +
   coord_cartesian(ylim = c(0.2,0.8)) +
   stat_summary(fun.data = mean_cl_boot, geom = "errorbar", colour="black", position = position_dodge(width = 5), width = 0) +
   geom_hline(yintercept=0.5, alpha=0.4)+
-  facet_grid(~experiment+training+hab+goal+mitten+causal)+
+  facet_grid(~experiment+training+hab+goal+mitten+causal+stimuli)+
   theme_bw(14)+
   theme(strip.placement = "outside") +
   theme(legend.position="none", axis.text.x = element_blank(), axis.title.x=element_blank())
@@ -579,6 +579,7 @@ model1.exp45.cooks <- lmer(formula = loglook ~ type * mitten + (1|subj_id) + (1|
                      data = filter(exp45.avg, subj_id != "S4_20" & subj_id != "S5_10" & subj_id != "S5_18"), REML=FALSE)
 summary(model1.exp45.cooks)
 
+
 # look at contrasts within each habituation condition
 contrasts.exp45 <- cbind(difflsmeans(model1.exp45.beta, test.effs="type:mitten")[[1]][,1], difflsmeans(model1.exp45, test.effs="type:mitten")[[1]])
 names(contrasts.exp45) <- c("beta", "b", "se", "df", "t", "lower", "upper", "p")
@@ -680,7 +681,7 @@ Why do infants succeed in these experiments without motor training, yet fail in 
 
 To ask whether surface properties of the hand reaching affect infants’ interpretation of the intentionality of these reaches, we ran two additional experiments. In Experiment 4 (N=`r length(unique(exp4.avg$subj_id))`), infants (M=`r exp4.info$mean` days, range=`r exp4.info$min`-`r exp4.info$max`, `r exp4.info$f` female) were habituated to and tested on events where a person reach for and pick up an object identical to those from Experiments 1-3 while wearing the same mitten (H4, T3). In Experiment 5 (N=`r length(unique(exp5.avg$subj_id))`), infants (M=`r exp5.info$mean` days, range=`r exp5.info$min`-`r exp5.info$max`, `r exp5.info$f` female) saw almost identical videos to those from Experiment 4 except that the person reached with a bare hand (H5, T4). 
 
-We found that infants looked marginally longer at the inefficient (M=`r summary.avg$look[14]`s, SE=`r summary.avg$se[14]`) than the efficient (M=`r summary.avg$look[12]`s, SE=`r summary.avg$se[12]`) reach of the bare hand, `r report(contrasts.exp45, 1, 3, 1)` in Experiment 5, whereas they did not distinguish the inefficient (M=`r summary.avg$look[12]`s, SE=`r summary.avg$se[12]`) from the efficient (M=`r summary.avg$look[11]`s, SE=`r summary.avg$se[11]`) action of the mittened hand, `r report(contrasts.exp45, 6, 3, 1)`. However, these two patterns of looking did not differ from each other, `r report(exp45.findings, 4, 3, 2)`, mixed effects model with fixed interaction between mitten and test trial, random intercept for participants.
+We found that infants looked marginally longer at the inefficient (M=`r summary.avg$look[14]`s, SE=`r summary.avg$se[14]`) than the efficient (M=`r summary.avg$look[12]`s, SE=`r summary.avg$se[12]`) reach of the bare hand, `r report(contrasts.exp45, 1, 3, 1)` in Experiment 5, whereas they did not distinguish the inefficient (M=`r summary.avg$look[12]`s, SE=`r summary.avg$se[12]`) from the efficient (M=`r summary.avg$look[11]`s, SE=`r summary.avg$se[11]`) action of the mittened hand in Experiment 4, `r report(contrasts.exp45, 6, 3, 1)`. However, these two patterns of looking did not differ from each other, `r report(exp45.findings, 4, 3, 2)`, mixed effects model with fixed interaction between mitten and test trial, random intercept for participants.
 
 We also compared these results against those from SCS Experiment 3, wherein infants received no mittens training and viewed a person reaching with a mittened hand. The results of Experiment 5 (no mitten) differed from those in SCS Experiment 3 (mitten), `r report(exp5.scs.findings, 4, 3, 2)`, whereas the results from Experiment 4 (mitten) did not differ from those in SCS Experiment 3 (mitten), `r report(exp4.scs.findings, 4, 3, 2)`. This finding accords with reports that young infants trained with mittens view an agent's reach as goal-directed only if the agent wears the same mittens and interacts with the same objects as they did during training (Gerson & Woodward, 2014; Amanda Woodward, 2008). Nevertheless, the differences in infants' responses to gloved and ungloved hands are not robust in our studies and merit further investigation.  
 
