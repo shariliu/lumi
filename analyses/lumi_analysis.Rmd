@@ -49,7 +49,7 @@ if(!"devtools" %in% rownames(installed.packages())) install.packages("devtools")
 devtools::install_github("crsh/papaja")
 devtools::install_github('achetverikov/apastats',subdir='apastats')
 
-packages <- c("tidyverse", "Hmisc", "lattice", "multcomp", "lsmeans", "schoRsch", "influence.ME", "devtools", "skimr", "simr", "lme4", "sjPlot", "effects", "lmerTest", "compute.es", "pwr", "stringr", "irr", "papaja", "apastats", "predictmeans")
+packages <- c("tidyverse", "Hmisc", "lattice", "multcomp", "lsmeans", "schoRsch", "influence.ME", "devtools", "skimr", "simr", "lme4", "sjPlot", "effects", "lmerTest", "compute.es", "pwr", "stringr", "irr", "papaja", "apastats", "predictmeans", "grid")
 
 ipak(packages)
 
@@ -270,11 +270,6 @@ summary.avg <- summarySEwithin(data = dplyr::filter(lumi.raw.avg), measurevar = 
                                   idvar = "subj_id")
 kable(summary.avg, caption = "Summary of Avg Looks to Eff and Ineff Actions")
 
-
-summary.tp <- summarySEwithin(data = dplyr::filter(lumi.raw.tp), measurevar = "look", betweenvars = c("experiment", "training", "hab","goal","mitten","causal", "paper"), withinvars = c("testtype", "testpair"),
-                                   idvar = "subj_id")
-summary.tp
-
 prop.tp <- summarySEwithin(data = dplyr::filter(lumi.prop.tp), measurevar = "look", betweenvars = c("experiment", "training", "hab","goal","mitten","causal", "paper"), withinvars = "testpair",
                                    idvar = "subj_id")
 prop.tp
@@ -282,12 +277,11 @@ prop.tp
 
 ```
 
-A.
 ```{r fig2a, fig.width = 20, include=TRUE}
 
 # avg looks to eff and ineff, grouped by experiment, with full variable info 
 fig2.raw <- ggplot(data = dplyr::filter(lumi.raw.avg), aes(type, look, fill=experiment))
-fig2.raw +
+fig2.raw.full <- fig2.raw +
   geom_boxplot(outlier.colour = NA, alpha = 0.5)+
   stat_summary(fun.y = mean, alpha = 0.8, geom = "point", shape=21, size=3, position = "dodge", colour = "black") +
   ylab("\n \n \n \n Looking Time (s)") +
@@ -295,29 +289,20 @@ fig2.raw +
   geom_point(alpha = 0.1)+
   geom_line(alpha = 0.1, aes(group = subj_id))+
   geom_errorbar(data = summary.avg, size = .5, width = 0, aes(ymin=look-ci, ymax=look+ci)) +
-  facet_grid(~experiment+training+goal+hab+causal+mitten+stimuli)+
+  facet_grid(~experiment+training+goal+hab+causal+mitten)+
   scale_x_discrete(labels = c("ineff","eff"))+
   theme_bw(14)+
-  theme(legend.position="none", axis.title.x=element_blank())
-
-# add annotations
-grid.text("Experiment", x = 0.08, y = .96)
-grid.text("Training", x = 0.08, y = .91)
-grid.text("Habituation", x = 0.08, y = .86)
-grid.text("Goal", x = 0.08, y = 0.81)
-grid.text("Mitten", x = 0.08, y = 0.76)
-grid.text("Causal", x = 0.08, y = 0.71)
-grid.text("Stimuli", x = 0.08, y = 0.66)
+  theme(legend.position="none", axis.title.x=element_blank(),strip.text.x = element_blank())
 ```
-B.
+
 ```{r fig2b, fig.width = 20, include=TRUE}
 # prop looks ineff, grouped by experiment, with full variable info 
 fig2.prop <- ggplot(data = dplyr::filter(lumi.prop.avg), aes(testtype, look, fill=experiment))
-fig2.prop + 
+fig2.prop.full <- fig2.prop + 
   geom_violin(alpha = 0.5, fill = NA, width = 0.5)+
   geom_boxplot(alpha = 0.5)+
   stat_summary(fun.y = mean, geom = "point", shape =21, size=3, position = "dodge", colour = "black") +
-  ylab("\n \n \n \n Proportion Looking to Inefficient") +
+  ylab("\n \n \n Proportion Looking \n to Inefficient") +
   xlab(element_blank())+
   geom_jitter(width = .05, alpha = 0.2)+
   coord_cartesian(ylim = c(0.2,0.8)) +
@@ -329,16 +314,20 @@ fig2.prop +
   theme(legend.position="none", axis.text.x = element_blank(), axis.title.x=element_blank())
 
 # add annotations
-grid.text("Experiment", x = 0.08, y = .96)
-grid.text("Training", x = 0.08, y = .91)
-grid.text("Habituation", x = 0.08, y = .86)
-grid.text("Goal", x = 0.08, y = 0.81)
-grid.text("Mitten", x = 0.08, y = 0.76)
-grid.text("Causal", x = 0.08, y = 0.71)
-grid.text("Stimuli", x = 0.08, y = 0.66)
+
+grid.arrange(fig2.prop.full, fig2.raw.full, heights = c(0.5,0.5))
+
+grid.text("Experiment", x = 0.05, y = 0.978)
+grid.text("Training", x = 0.05, y = .95)
+grid.text("Goal", x = 0.05, y = 0.89)
+grid.text("Habituation", x = 0.05, y = .92)
+grid.text("Causal", x = 0.05, y = 0.861)
+grid.text("Mitten", x = 0.05, y = 0.832)
+grid.text("Stimuli", x = 0.05, y = 0.805)
+
 ```
 
-**Figure 2.** Looking time in (A) seconds towards the efficient versus inefficient reach, and (B) proportion looking towards the inefficient reach at test across Experiments 1-5 (n=152) and across Experiments 1-5 in Skerry et al. (2013) (n=112). Labels above each panel list the experiment name (Exp. 1-5, SCS Exp. 1-5), type of motor training (none, ineffective non-sticky mittens, or effective sticky mittens), type of action during habituation (constrained or unconstrained by a barrier), goal (state.change or pick.up), whether her actions appeared to be causal (yes.causal or no.causal), and whether the actress wore a mitten (yes.mitten or no.mitten). Error bars around means indicate within-subjects 95% confidence intervals (A) and bootstrapped 95% confidence intervals (B). Individual points (B) or pairs of points (A) indicate data from a single participant. Horizontal bars within boxes indicate medians, and boxes indicate the middle 2 quartiles of data. Violin plots in (B) indicate distribution of data, area scaled proportionally to the number of observations.
+**Figure 2.** Looking time in towards the efficient versus inefficient reach (bottom), and proportion looking towards the inefficient reach (top) at test across Experiments 1-5 (n=152) and across Experiments 1-5 in Skerry et al. (2013) (n=112). Labels above each panel list the experiment name (Exp. 1-5, SCS Exp. 1-5), type of motor training (none, ineffective non-sticky mittens, or effective sticky mittens), type of action during habituation (constrained or unconstrained by a barrier), goal (state.change or pick.up), whether her actions appeared to be causal (yes.causal or no.causal), and whether the actress wore a mitten (yes.mitten or no.mitten). Error bars around means indicate within-subjects 95% confidence intervals (bottom) and bootstrapped 95% confidence intervals (top). Individual points (top) or pairs of points (bottom) indicate data from a single participant. Horizontal bars within boxes indicate medians, and boxes indicate the middle 2 quartiles of data. Violin plots (top) indicate distribution of data, area scaled proportionally to the number of observations.
 
 ***
 
