@@ -290,15 +290,24 @@ fig2.raw <- ggplot(data = dplyr::filter(lumi.raw.avg), aes(type, look, fill=expe
 fig2.raw +
   geom_boxplot(outlier.colour = NA, alpha = 0.5)+
   stat_summary(fun.y = mean, alpha = 0.8, geom = "point", shape=21, size=3, position = "dodge", colour = "black") +
-  ylab("Looking Time (s)") +
+  ylab("\n \n \n \n Looking Time (s)") +
   coord_cartesian(ylim = c(0, 40)) +
   geom_point(alpha = 0.1)+
   geom_line(alpha = 0.1, aes(group = subj_id))+
   geom_errorbar(data = summary.avg, size = .5, width = 0, aes(ymin=look-ci, ymax=look+ci)) +
-  facet_grid(~experiment+training+hab+goal+mitten+causal)+
+  facet_grid(~experiment+training+goal+hab+causal+mitten+stimuli)+
   scale_x_discrete(labels = c("ineff","eff"))+
   theme_bw(14)+
   theme(legend.position="none", axis.title.x=element_blank())
+
+# add annotations
+grid.text("Experiment", x = 0.08, y = .96)
+grid.text("Training", x = 0.08, y = .91)
+grid.text("Habituation", x = 0.08, y = .86)
+grid.text("Goal", x = 0.08, y = 0.81)
+grid.text("Mitten", x = 0.08, y = 0.76)
+grid.text("Causal", x = 0.08, y = 0.71)
+grid.text("Stimuli", x = 0.08, y = 0.66)
 ```
 B.
 ```{r fig2b, fig.width = 20, include=TRUE}
@@ -308,17 +317,25 @@ fig2.prop +
   geom_violin(alpha = 0.5, fill = NA, width = 0.5)+
   geom_boxplot(alpha = 0.5)+
   stat_summary(fun.y = mean, geom = "point", shape =21, size=3, position = "dodge", colour = "black") +
-  ylab("Proportion Looking to Inefficient Reach") +
+  ylab("\n \n \n \n Proportion Looking to Inefficient") +
   xlab(element_blank())+
   geom_jitter(width = .05, alpha = 0.2)+
   coord_cartesian(ylim = c(0.2,0.8)) +
   stat_summary(fun.data = mean_cl_boot, geom = "errorbar", colour="black", position = position_dodge(width = 5), width = 0) +
   geom_hline(yintercept=0.5, alpha=0.4)+
-  facet_grid(~experiment+training+hab+goal+mitten+causal+stimuli)+
+  facet_grid(~experiment+training+goal+hab+causal+mitten+stimuli)+
   theme_bw(14)+
   theme(strip.placement = "outside") +
   theme(legend.position="none", axis.text.x = element_blank(), axis.title.x=element_blank())
 
+# add annotations
+grid.text("Experiment", x = 0.08, y = .96)
+grid.text("Training", x = 0.08, y = .91)
+grid.text("Habituation", x = 0.08, y = .86)
+grid.text("Goal", x = 0.08, y = 0.81)
+grid.text("Mitten", x = 0.08, y = 0.76)
+grid.text("Causal", x = 0.08, y = 0.71)
+grid.text("Stimuli", x = 0.08, y = 0.66)
 ```
 
 **Figure 2.** Looking time in (A) seconds towards the efficient versus inefficient reach, and (B) proportion looking towards the inefficient reach at test across Experiments 1-5 (n=152) and across Experiments 1-5 in Skerry et al. (2013) (n=112). Labels above each panel list the experiment name (Exp. 1-5, SCS Exp. 1-5), type of motor training (none, ineffective non-sticky mittens, or effective sticky mittens), type of action during habituation (constrained or unconstrained by a barrier), goal (state.change or pick.up), whether her actions appeared to be causal (yes.causal or no.causal), and whether the actress wore a mitten (yes.mitten or no.mitten). Error bars around means indicate within-subjects 95% confidence intervals (A) and bootstrapped 95% confidence intervals (B). Individual points (B) or pairs of points (A) indicate data from a single participant. Horizontal bars within boxes indicate medians, and boxes indicate the middle 2 quartiles of data. Violin plots in (B) indicate distribution of data, area scaled proportionally to the number of observations.
@@ -387,7 +404,7 @@ report <- function(table, index, places, tails) {
 ```
 
 
-# Results
+# Results (Main Text)
 ## Infants' analysis of causal vs non-causal actions
 ### Experiment 1
 ```{r exp1}
@@ -763,7 +780,7 @@ This analysis confirms that first-person action experience is not the only way t
 
 # Supplemental Results
 
-## Assessing distribution of looks
+## Distribution of Looks
 
 ```{r distplot, fig.width = 7, include=TRUE}
 # is a lognormal transformation justified given the distribution of looks?
@@ -782,7 +799,7 @@ lognormal.ll <- fitdistr(lumi.raw.avg$look, "lognormal")$loglik
 
 ***
 
-## Assessing reliability 
+## Reliability 
 
 ```{r relplot, include=TRUE}
 relplot <- ggplot(data = lumi.rel, aes(experiment, gap, fill = experiment))
@@ -826,13 +843,26 @@ hab.plot +
 
 # assessing effect of experimental manipulations on hab time
 op <- options(contrasts = c("contr.sum", "contr.poly"))
-hab1 <- lmer(total_hab ~ ageday + sex + hab + goal + mitten + causal + (1|experiment), data = filter(lumi.wide, paper == "LBS"), REML=FALSE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
-hab1.table <- gen.m(hab1)
-hab1.ci <- gen.ci(hab1)[3:10,]
+hab1 <- lmer(total_hab ~ ageday + sex + first.test + hab + goal + mitten + causal + (1|experiment), data = filter(lumi.wide, paper == "LBS"), REML=FALSE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+hab.table <- gen.m(hab1)
+hab.ci <- gen.ci(hab1)[3:10,]
+
+hab1.beta <- lmer(scale(total_hab) ~ scale(ageday) + sex + first.test + hab + goal + mitten + causal + (1|experiment), data = filter(lumi.wide, paper == "LBS"), REML=FALSE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+hab.betas <- fixef(hab1.beta)
+
+hab.findings <- data.frame(cbind(hab.betas,hab.table,hab.ci))
+names(hab.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
 
 ```
 
-To ask whether infants' attention during habituation was affected by experimental manipulations across Experiment 1-5 (constrained vs unconstrained habituation, state change vs pickup goal, mitten vs no mitten, and causally contingent vs noncontigent action), and varied by gender and age, we fit a mixed effects model on these fixed effects and experiment (1-5) as a random intercept. We found that the only robust predictor of attention during habituation was age, [`r hab1.ci$lower[4]`, `r hab1.ci$upper[4]`], B=`r hab1.table$est[2]`, p=`r hab1.table$p[2]`, two-tailed, such that older infants looked for a shorter time overall than younger infants.
+***
+
+**Table S1.** Regression table for mixed effects model analyzing the effect of age, sex, order of test events, habituation condition, goal, mitten, and causal information on habituation, controlling for variations across Experiments 1-5. Model formula: `total_hab ~ ageday + sex + first.test + hab + goal + mitten + causal + (1|experiment)`
+```{r hab.table}
+kable(hab.findings, col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
+```
+
+To ask whether infants' attention during habituation was affected by experimental manipulations across Experiment 1-5 (constrained vs unconstrained habituation, state change vs pickup goal, mitten vs no mitten, and causally contingent vs noncontigent action), and varied by gender and age, we fit a mixed effects model on these fixed effects and experiment (1-5) as a random intercept. We found that the only robust predictor of attention during habituation was age, `r report(hab.findings, 2, 3, 2)`, such that older infants looked for a shorter time overall than younger infants.
 
 ## Exploring effect of test trial order, attention during habituation, age in days, and sex across Exp 1-5
 
