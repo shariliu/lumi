@@ -37,3 +37,6 @@ lpSolve
 irr
 papaja
 apastats
+nlme
+predictmeans
+gridExtra

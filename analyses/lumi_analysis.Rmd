@@ -292,7 +292,7 @@ fig2.raw.full <- fig2.raw +
   theme(legend.position="none", axis.title.x=element_blank(),strip.text.x = element_blank())
 ```
 
-```{r fig2b, fig.width = 20, include=TRUE}
+```{r fig2b, fig.width = 20, fig.height=12, include=TRUE}
 # prop looks ineff, grouped by experiment, with full variable info 
 fig2.prop <- ggplot(data = dplyr::filter(lumi.prop.avg), aes(testtype, look, fill=experiment))
 fig2.prop.full <- fig2.prop + 
@@ -324,7 +324,7 @@ grid.text("Stimuli", x = 0.05, y = 0.805)
 
 ```
 
-**Figure 2.** Looking time in towards the efficient versus inefficient reach (bottom), and proportion looking towards the inefficient reach (top) at test across Experiments 1-5 (n=152) and across Experiments 1-5 in Skerry et al. (2013) (n=112). Labels above each panel list the experiment name (Exp. 1-5, SCS Exp. 1-5), type of motor training (none, ineffective non-sticky mittens, or effective sticky mittens), type of action during habituation (constrained or unconstrained by a barrier), goal (state.change or pick.up), whether her actions appeared to be causal (yes.causal or no.causal), and whether the actress wore a mitten (yes.mitten or no.mitten). Error bars around means indicate within-subjects 95% confidence intervals (bottom) and bootstrapped 95% confidence intervals (top). Individual points (top) or pairs of points (bottom) indicate data from a single participant. Horizontal bars within boxes indicate medians, and boxes indicate the middle 2 quartiles of data. Violin plots (top) indicate distribution of data, area scaled proportionally to the number of observations.
+**Figure 2.** Looking time in towards the efficient versus inefficient reach (bottom), and proportion looking towards the inefficient reach (top) at test across Experiments 1-5 (n=152) and across Experiments 1-5 in Skerry et al. (2013) (n=112). Labels above each panel list the experiment name (Exp. 1-5, SCS Exp. 1-5), type of motor training (none, ineffective non-sticky mittens, or effective sticky mittens), type of action during habituation (constrained or unconstrained by a barrier), goal (state.change or pick.up), whether her actions appeared to be causal (yes.causal or no.causal), whether the actress wore a mitten (yes.mitten or no.mitten), and stimuli listed in Figure 1. Error bars around means indicate within-subjects 95% confidence intervals (bottom) and bootstrapped 95% confidence intervals (top). Individual points (top) or pairs of points (bottom) indicate data from a single participant. Horizontal bars within boxes indicate medians, and boxes indicate the middle 2 quartiles of data. Violin plots (top) indicate distribution of data, area scaled proportionally to the number of observations. 
 
 ***
 
@@ -733,13 +733,14 @@ model1.all.betas <- fixef(model1.all.beta)
 
 
 ```{r meta_table, include=TRUE}
-kable(cbind(model1.all.betas, model1.all.table, model1.all.ci), col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
-
 meta.findings <- data.frame(cbind(model1.all.betas, model1.all.table, model1.all.ci))
 names(meta.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
+rownames(meta.findings) <- c("(Intercept)", "effective training", "ineffective training", "state change goal", "constrained habituation", "causally effective", "mitten")
+
+kable(meta.findings, col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
 ```
 
-```{r meta_figure, include=TRUE, fig.width=12, cache=FALSE}
+```{r meta_figure, include=TRUE, fig.width=12, fig.height = 8, cache=FALSE}
 # two ways of plotting: first, plotting model effects
 # plot_model(model1.all, sort.est=TRUE, show.values=TRUE, digits=3, colors = "bw",  title = "prop.ineff.all ~ training + hab + goal + mitten + causal + (1+first.test|experiment) + (1|ageday) + (1|sex) + (1|paper)")
 
@@ -764,14 +765,43 @@ plot(allEffects(model1.all.cooks),
 This analysis confirms that first-person action experience is not the only way to enhance infants’ appreciation of the causal and intentional aspects of action. We found that infants’ expectations were stronger when the observed action was spatiotemporally continuous its effect (i.e., appeared to be causal), `r report(meta.findings, 6, 3, 2)`, when infants received effective motor training (sticky mittens), relative to no training `r report(meta.findings, 2, 3, 2)`, when the observed agent's actions were constrained by a barrier and were efficiently adapted to that barrier, relative to the same actions that were unconstrained by a barrier, `r report(meta.findings, 5, 3, 2)`, and when the agent pursued a state change goal, relative to a pickup goal, `r report(meta.findings, 4, 3, 2)`. We also found that infants’ expectations were marginally *negatively* affected when they received ineffective motor training (non-sticky mittens), relative to no training, `r report(meta.findings, 3, 3, 2)`, and were unaffected when the actor wore a mitten, relative to no mitten `r report(meta.findings, 7, 3, 2)`.
 
 
+## Reliability (Methods Section)
+```{r reliability}
+exp1.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.1")$newlook, filter(lumi.rel, experiment == "Exp.1")$look.orig), model = "twoway", type = "agreement", unit = "single")
+exp2.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.2")$newlook, filter(lumi.rel, experiment == "Exp.2")$look.orig), model = "twoway", type = "agreement", unit = "single")
+exp3.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.3")$newlook, filter(lumi.rel, experiment == "Exp.3")$look.orig), model = "twoway", type = "agreement", unit = "single")
+exp4.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.4")$newlook, filter(lumi.rel, experiment == "Exp.4")$look.orig), model = "twoway", type = "agreement", unit = "single")
+exp5.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.5")$newlook, filter(lumi.rel, experiment == "Exp.5")$look.orig), model = "twoway", type = "agreement", unit = "single")
+
+```
+
+
+To assess reliability, 50% of test trials from participants across Experiments 1-5 (`r length(unique(lumi.wide$subj_id))/2` participants, `r nrow(lumi.rel)` trials) were randomly selected and coded by additional researchers who were unaware of experimental condition, and test trial order. The intraclass correlation coefficient (ICC) between the original data, and this newly coded data, was `r exp1.rel$value` [`r exp1.rel$lbound`, `r exp1.rel$ubound`], `r exp2.rel$value` [`r exp2.rel$lbound`, `r exp2.rel$ubound`], `r exp3.rel$value` [`r exp3.rel$lbound`, `r exp3.rel$ubound`], `r exp4.rel$value` [`r exp4.rel$lbound`, `r exp4.rel$ubound`], `r exp5.rel$value` [`r exp5.rel$lbound`, `r exp5.rel$ubound`], for Experiments 1 through 5, respectively.
+
+
 # Supplemental Results
+
+## Exclusion info
+
+**Table S1.** Tally of infants who participated in Experiments 1-5 but were excluded in our final sample. These exclusion criteria were set prior to the start of data collection, but vary slightly by experiment (e.g. we relaxed our definition of inattentiveness from excluding all data from a participant if they missed a test trial in Experiment 1, to excluding data from just that trial in Experiments 2-5). 
+
+Experiment | Fussiness | Inattentiveness | Caregiver Interference | Experimenter/Coding Error | Technical Failure | Total 
+---------- | --------- | --------------- | ---------------------- | ------------------------- | ----------------- | -----
+Exp.1 | 9 | 5 | 1 | 12 | 3 | 30
+Exp.2 | 0 | 0 | 0 | 2 | 0 | 2
+Exp.3 | 6 | 0 | 0 | 2 | 0 | 8
+Exp.4 | 7 | 0 | 0 | 2 | 0 | 7
+Exp.5 | 6 | 0 | 0 | 1 | 2 | 9
+**Total** | 28 | 5 | 1 | 19 | 5 | 50
+***
+
 
 ## Distribution of Looks
 
 ```{r distplot, fig.width = 7, include=TRUE}
 # is a lognormal transformation justified given the distribution of looks?
-fig.S1 <- ggplot(data = dplyr::filter(lumi.raw.avg), aes(look, fill=experiment, colour = experiment))
-fig.S1 +
+fig.S2 <- ggplot(data = dplyr::filter(lumi.raw.avg), aes(look, fill=experiment, colour = experiment))
+fig.S2 +
   geom_density(alpha = 0.5)+
   # geom_text(aes(experiment))+
   theme_linedraw(15)+
@@ -825,6 +855,28 @@ hab.plot +
 
 ***
 
+
+```{r habplot2, fig.width = 7, include = TRUE}
+lumi.hab <- lumi.wide %>% filter(paper == "LBS") %>% gather(habtrial, look, H1:H12)
+lumi.hab$habtrial <- str_replace(lumi.hab$habtrial, "H", "")
+lumi.hab$habtrial <- as.numeric(lumi.hab$habtrial)
+
+habplot2 <- ggplot(data = lumi.hab, aes(x = habtrial, y = look, colour=experiment))
+habplot2 +
+  geom_point(alpha = 0.2) +
+  geom_line(aes(group = subj_id), alpha = 0.2)+
+  geom_smooth()+
+  ylim(0, 45)+
+  ylab("Looking Time (s)") +
+  xlab("Habituation Trial (1-12)")+
+  facet_grid(~experiment+training+goal+hab+causal+mitten)+
+  theme_linedraw(15)+
+  theme(legend.position="none")
+
+```
+
+**Figure S4.** Looking time in seconds during each habituation trial across Experiment 1-5. Curves with 95% confidence interval ribbons indicate smoothed conditional means, generated using the loess method. Connected points indicate data from a single participant.
+
 ```{r hab.analysis}
 
 # assessing effect of experimental manipulations on hab time
@@ -837,14 +889,15 @@ hab1.beta <- lmer(scale(total_hab) ~ scale(ageday) + sex + first.test + hab + go
 hab.betas <- fixef(hab1.beta)
 
 hab.findings <- data.frame(cbind(hab.betas,hab.table,hab.ci))
+rownames(hab.findings) <- c("(Intercept)", "Age in Days", "Sex", "First Test Event", "Habituation", "Goal", "Mitten", "Causal")
 names(hab.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
 
 ```
 
 ***
 
-**Table S1.** Regression table for mixed effects model analyzing the effect of age, sex, order of test events, habituation condition, goal, mitten, and causal information on habituation, controlling for variations across Experiments 1-5. Model formula: `total_hab ~ ageday + sex + first.test + hab + goal + mitten + causal + (1|experiment)`
-```{r hab.table}
+**Table S2.** Regression table for mixed effects model analyzing the effect of age, sex, order of test events, habituation condition, goal, mitten, and causal information on habituation, controlling for variations across Experiments 1-5. Model formula: `total_hab ~ ageday + sex + first.test + hab + goal + mitten + causal + (1|experiment)`
+```{r hab.table, include=TRUE}
 kable(hab.findings, col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
 ```
 
@@ -863,6 +916,7 @@ emodel.exp1.betas <- fixef(lmer(scale(loglook) ~ hab * type * first.test + scale
 
 exp1.efindings <- data.frame(cbind(emodel.exp1.betas, emodel.exp1.table, emodel.exp1.ci))
 names(exp1.efindings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
+rownames(exp1.efindings) <- c("Intercept", "Habituation", "Test Event", "First Test Event", "Attention During Habituation", "Sex", "Age in Days", "Habituation:Test Event", "Habituation:First Test Event", "Test Event:First Test Event", "Habituation:Test Event:First Test Event")
 
 emodel.exp2 <- lmer(loglook ~ type * first.test + total_hab + sex + ageday + (1|subj_id), REML = FALSE, data = exp2.avg)
 emodel.exp2.table <- gen.m(emodel.exp2)
@@ -871,6 +925,7 @@ emodel.exp2.betas <- fixef(lmer(scale(loglook) ~ type * first.test + scale(total
 
 exp2.efindings <- data.frame(cbind(emodel.exp2.betas, emodel.exp2.table, emodel.exp2.ci))
 names(exp2.efindings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
+rownames(exp2.efindings) <- c("Intercept", "Test Event", "First Test Event", "Attention During Habituation", "Sex", "Age in Days", "Test Event:First Test Event")
 
 emodel.exp3 <- lmer(loglook ~ causal * type * first.test + total_hab + sex + ageday + (1|subj_id), REML = FALSE, data = exp3.avg)
 emodel.exp3.table <- gen.m(emodel.exp3)
@@ -879,7 +934,7 @@ emodel.exp3.betas <- fixef(lmer(scale(loglook) ~ causal * type * first.test + sc
 
 exp3.efindings <- data.frame(cbind(emodel.exp3.betas, emodel.exp3.table, emodel.exp3.ci))
 names(exp3.efindings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
-
+rownames(exp3.efindings) <- c("Intercept", "Causal", "Test Event", "First Test Event", "Attention During Habituation", "Sex", "Age in Days", "Causal:Test Event", "Causal:First Test Event", "Test Event: First Test Event", "Causal:Test Event:First Test Event")
 
 emodel.exp4 <- lmer(loglook ~ type * first.test + total_hab + sex + ageday + (1|subj_id), REML=FALSE, data = exp4.avg)
 emodel.exp4.table <- gen.m(emodel.exp4)
@@ -888,7 +943,7 @@ emodel.exp4.betas <- fixef(lmer(scale(loglook) ~ type * first.test + scale(total
 
 exp4.efindings <- data.frame(cbind(emodel.exp4.betas, emodel.exp4.table, emodel.exp4.ci))
 names(exp4.efindings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
-
+rownames(exp4.efindings) <- c("Intercept", "Test Event", "First Test Event", "Attention During Habituation", "Sex", "Age in Days", "Test Event:First Test Event")
 
 emodel.exp5 <- lmer(loglook ~ type * first.test + total_hab + sex + ageday + (1|subj_id), REML = FALSE, data = exp5.avg)
 emodel.exp5.table <- gen.m(emodel.exp5)
@@ -897,6 +952,7 @@ emodel.exp5.betas <- fixef(lmer(scale(loglook) ~ type * first.test + scale(total
 
 exp5.efindings <- data.frame(cbind(emodel.exp5.betas, emodel.exp5.table, emodel.exp5.ci))
 names(exp5.efindings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
+rownames(exp5.efindings) <- c("Intercept", "Test Event", "First Test Event", "Attention During Habituation", "Sex", "Age in Days", "Test Event:First Test Event")
 
 ```
 
@@ -908,21 +964,31 @@ In Experiment 1, we also find that infants randomly assigned to habituate to a r
 
 In Experiment 2, we also find that infants randomly assigned to look at the efficient reach first look longer overall at test, `r report(exp2.efindings, 3, 3, 2)`.
 
+**Tables S3-S7.** Regression tables from exploratory models in Experiments 1-5. Dependent measure is log-tranforming looking times at test, averaged across 3 test pairs. Categorical predictors were coded using sum contrasts, and fixed effects from the model should therefore be interpreted with respect to the grand mean (i.e. with respect to 0). Model formulas are listed above each table. See Figures S4-S8.
+
+**Figures S4-S8.** Effect plots for model investigating exploratory and hypothesis-driven predictors of sensitivity to action efficiency across Experiments 1-5. Each point shows estimates of effects at each level of all categorical predictors. Error bars and ribbons indicate 95% confidence intervals. See Tables S3-S7 for full results.
 
 ### Experiment 1
 
-```{r, include = TRUE}
-kable(cbind(emodel.exp1.betas, emodel.exp1.table, emodel.exp1.ci), col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
+Model formula: `loglook ~ hab * type * first.test + total_hab + sex + ageday + (1|subj_id)`
 
+```{r, include = TRUE}
+kable(exp1.efindings, col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
+
+plot(allEffects(emodel.exp1))
 ```
 
 
 
 ### Experiment 2
 
+Model formula: `loglook ~ type * first.test + total_hab + sex + ageday + (1|subj_id)`
+
 ```{r, include = TRUE}
 
-kable(cbind(emodel.exp2.betas, emodel.exp2.table, emodel.exp2.ci), col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
+kable(exp2.efindings, col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
+
+plot(allEffects(emodel.exp2))
 
 ```
 
@@ -930,8 +996,12 @@ kable(cbind(emodel.exp2.betas, emodel.exp2.table, emodel.exp2.ci), col.names = c
 
 ### Experiment 3
 
+Model formula: `loglook ~ causal * type * first.test + total_hab + sex + ageday + (1|subj_id)`
+
 ```{r, include = TRUE}
-kable(cbind(emodel.exp3.betas, emodel.exp3.table, emodel.exp3.ci), col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
+kable(exp3.efindings, col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
+
+plot(allEffects(emodel.exp3))
 
 ```
 
@@ -939,41 +1009,25 @@ kable(cbind(emodel.exp3.betas, emodel.exp3.table, emodel.exp3.ci), col.names = c
 
 ### Experiment 4
 
+Model formula: `loglook ~ type * first.test + total_hab + sex + ageday + (1|subj_id)`
+
 ```{r, include = TRUE}
-kable(cbind(emodel.exp4.betas, emodel.exp4.table, emodel.exp4.ci),col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
+kable(exp4.efindings,col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
+
+plot(allEffects(emodel.exp4))
+
 ```
 
 
 
 ### Experiment 5
 
+Model formula: `loglook ~ type * first.test + total_hab + sex + ageday + (1|subj_id)`
+
 ```{r, include = TRUE}
-kable(cbind(emodel.exp5.betas, emodel.exp5.table, emodel.exp5.ci),col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
-```
+kable(exp5.efindings,col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
 
-## Reliability
-```{r reliability}
-exp1.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.1")$newlook, filter(lumi.rel, experiment == "Exp.1")$look.orig), model = "twoway", type = "agreement", unit = "single")
-exp2.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.2")$newlook, filter(lumi.rel, experiment == "Exp.2")$look.orig), model = "twoway", type = "agreement", unit = "single")
-exp3.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.3")$newlook, filter(lumi.rel, experiment == "Exp.3")$look.orig), model = "twoway", type = "agreement", unit = "single")
-exp4.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.4")$newlook, filter(lumi.rel, experiment == "Exp.4")$look.orig), model = "twoway", type = "agreement", unit = "single")
-exp5.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.5")$newlook, filter(lumi.rel, experiment == "Exp.5")$look.orig), model = "twoway", type = "agreement", unit = "single")
+plot(allEffects(emodel.exp5))
 
 ```
 
-
-To assess reliability, 50% of test trials from participants across Experiments 1-5 (`r length(unique(lumi.wide$subj_id))/2` participants, `r nrow(lumi.rel)` trials) were randomly selected and coded by additional researchers who were unaware of experimental condition, and test trial order. The intraclass correlation coefficient (ICC) between the original data, and this newly coded data, was `r exp1.rel$value` [`r exp1.rel$lbound`, `r exp1.rel$ubound`], `r exp2.rel$value` [`r exp2.rel$lbound`, `r exp2.rel$ubound`], `r exp3.rel$value` [`r exp3.rel$lbound`, `r exp3.rel$ubound`], `r exp4.rel$value` [`r exp4.rel$lbound`, `r exp4.rel$ubound`], `r exp5.rel$value` [`r exp5.rel$lbound`, `r exp5.rel$ubound`], for Experiments 1 through 5, respectively.
-
-## Exclusion info
-
-**Table S1.** Tally of infants who participated in Experiments 1-5 but were excluded in our final sample. These exclusion criteria were set prior to the start of data collection, but vary slightly by experiment (e.g. we relaxed our definition of inattentiveness from excluding all data from a participant if they missed a test trial in Experiment 1, to excluding data from just that trial in Experiments 2-5). 
-
-Experiment | Fussiness | Inattentiveness | Caregiver Interference | Experimenter/Coding Error | Technical Failure | Total 
----------- | --------- | --------------- | ---------------------- | ------------------------- | ----------------- | -----
-Exp.1 | 9 | 5 | 1 | 12 | 3 | 30
-Exp.2 | 0 | 0 | 0 | 2 | 0 | 2
-Exp.3 | 6 | 0 | 0 | 2 | 0 | 8
-Exp.4 | 7 | 0 | 0 | 2 | 0 | 7
-Exp.5 | 6 | 0 | 0 | 1 | 2 | 9
-**Total** | 28 | 5 | 1 | 19 | 5 | 50
-***
