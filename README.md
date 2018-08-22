@@ -6,4 +6,4 @@ Is first-person reaching experience is necessary to construe reaching as goal-di
 
 ### Project Directory 
 **Analyses**: Data, codebook, analyses  
-**Materials**: Stimuli 
+**Materials**: Stored on OSF repository (https://osf.io/rcsns/) 
