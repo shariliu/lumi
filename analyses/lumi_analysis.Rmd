@@ -292,7 +292,7 @@ fig2.raw.full <- fig2.raw +
   theme(legend.position="none", axis.title.x=element_blank(),strip.text.x = element_blank())
 ```
 
-```{r fig2b, fig.width = 20, fig.height=12, include=TRUE}
+```{r fig2b, fig.width = 20, fig.height=13, include=TRUE}
 # prop looks ineff, grouped by experiment, with full variable info 
 fig2.prop <- ggplot(data = dplyr::filter(lumi.prop.avg), aes(testtype, look, fill=experiment))
 fig2.prop.full <- fig2.prop + 
@@ -856,7 +856,7 @@ hab.plot +
 ***
 
 
-```{r habplot2, fig.width = 7, include = TRUE}
+```{r habplot2, fig.width = 12, include = TRUE}
 lumi.hab <- lumi.wide %>% filter(paper == "LBS") %>% gather(habtrial, look, H1:H12)
 lumi.hab$habtrial <- str_replace(lumi.hab$habtrial, "H", "")
 lumi.hab$habtrial <- as.numeric(lumi.hab$habtrial)
@@ -964,6 +964,8 @@ In Experiment 1, we also find that infants randomly assigned to habituate to a r
 
 In Experiment 2, we also find that infants randomly assigned to look at the efficient reach first look longer overall at test, `r report(exp2.efindings, 3, 3, 2)`.
 
+***
+
 **Tables S3-S7.** Regression tables from exploratory models in Experiments 1-5. Dependent measure is log-tranforming looking times at test, averaged across 3 test pairs. Categorical predictors were coded using sum contrasts, and fixed effects from the model should therefore be interpreted with respect to the grand mean (i.e. with respect to 0). Model formulas are listed above each table. See Figures S4-S8.
 
 **Figures S4-S8.** Effect plots for model investigating exploratory and hypothesis-driven predictors of sensitivity to action efficiency across Experiments 1-5. Each point shows estimates of effects at each level of all categorical predictors. Error bars and ribbons indicate 95% confidence intervals. See Tables S3-S7 for full results.
@@ -972,7 +974,7 @@ In Experiment 2, we also find that infants randomly assigned to look at the effi
 
 Model formula: `loglook ~ hab * type * first.test + total_hab + sex + ageday + (1|subj_id)`
 
-```{r, include = TRUE}
+```{r, include = TRUE, fig.height=8, fig.width = 12}
 kable(exp1.efindings, col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
 
 plot(allEffects(emodel.exp1))
@@ -984,8 +986,7 @@ plot(allEffects(emodel.exp1))
 
 Model formula: `loglook ~ type * first.test + total_hab + sex + ageday + (1|subj_id)`
 
-```{r, include = TRUE}
-
+```{r, include = TRUE, fig.height=8, fig.width = 12}
 kable(exp2.efindings, col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
 
 plot(allEffects(emodel.exp2))
@@ -998,7 +999,7 @@ plot(allEffects(emodel.exp2))
 
 Model formula: `loglook ~ causal * type * first.test + total_hab + sex + ageday + (1|subj_id)`
 
-```{r, include = TRUE}
+```{r, include = TRUE, fig.height=8, fig.width = 12}
 kable(exp3.efindings, col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
 
 plot(allEffects(emodel.exp3))
@@ -1011,7 +1012,7 @@ plot(allEffects(emodel.exp3))
 
 Model formula: `loglook ~ type * first.test + total_hab + sex + ageday + (1|subj_id)`
 
-```{r, include = TRUE}
+```{r, include = TRUE, fig.height=8, fig.width = 12}
 kable(exp4.efindings,col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
 
 plot(allEffects(emodel.exp4))
@@ -1024,7 +1025,7 @@ plot(allEffects(emodel.exp4))
 
 Model formula: `loglook ~ type * first.test + total_hab + sex + ageday + (1|subj_id)`
 
-```{r, include = TRUE}
+```{r, include = TRUE, fig.height=8, fig.width = 12}
 kable(exp5.efindings,col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
 
 plot(allEffects(emodel.exp5))
