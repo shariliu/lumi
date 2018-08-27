@@ -292,7 +292,7 @@ fig2.raw.full <- fig2.raw +
   theme(legend.position="none", axis.title.x=element_blank(),strip.text.x = element_blank())
 ```
 
-```{r fig2b, fig.width = 20, fig.height=13, include=TRUE}
+```{r fig2b, fig.width = 20, fig.height=11, include=TRUE}
 # prop looks ineff, grouped by experiment, with full variable info 
 fig2.prop <- ggplot(data = dplyr::filter(lumi.prop.avg), aes(testtype, look, fill=experiment))
 fig2.prop.full <- fig2.prop + 
@@ -729,7 +729,7 @@ model1.all.betas <- fixef(model1.all.beta)
 ```
 
 ***
-**Table 2.** Regression table for model investigating predictors of sensitivity to action efficiency across Experiment 1-5 and all experiments from Skerry et al. (2013) (total N=`r length(unique(lumi.wide$subj_id))`, `r length(unique(lumi.wide$subj_id))-meta.exclude.n` included in final analysis, `r meta.exclude.n` excluded on the basis of Cook's Distance). Dependent measure is proportion looking towards the inefficient reach, averaged across 3 test trials during test. Categorical predictors were coded using sum contrasts, and fixed effects from the model should therefore be interpreted with respect to the grand mean (i.e. with respect to 0). Model formula: `prop.ineff.all ~ training + goal + hab + causal + mitten + (1|experiment) + (1|ageday) + (1|sex) + (1|paper)`.
+**Table 2.** Regression table for model investigating predictors of sensitivity to action efficiency across Experiment 1-5 and all experiments from Skerry et al. (2013) (total N=`r length(unique(lumi.wide$subj_id))`, `r length(unique(lumi.wide$subj_id))-meta.exclude.n` included in final analysis, `r meta.exclude.n` excluded on the basis of Cook's Distance). Dependent measure is proportion looking towards the inefficient reach, averaged across 3 test trials during test. Categorical predictors were coded using sum contrasts, and fixed effects from the model should therefore be interpreted with respect to the grand mean (i.e. with respect to 0). Degrees of freedom were generated using the Satterthwaite approximation method. Model formula: `prop.ineff.all ~ training + goal + hab + causal + mitten + (1|experiment) + (1|ageday) + (1|sex) + (1|paper)`.
 
 
 ```{r meta_table, include=TRUE}
@@ -962,7 +962,7 @@ Regression tables for each of these models is below. In general, we find no effe
 
 In Experiment 1, we also find that infants randomly assigned to habituate to a rational agent look longer overall at test, `r report(exp1.efindings, 2, 3, 2)`, and that infants randomly assigned to view the efficient reach first look longer overall at test, `r report(exp1.efindings, 4, 3, 2)`.
 
-In Experiment 2, we also find that infants randomly assigned to look at the efficient reach first look longer overall at test, `r report(exp2.efindings, 3, 3, 2)`.
+In Experiment 2, we also find that infants randomly assigned to look at the inefficient reach first look longer overall at test, `r report(exp2.efindings, 3, 3, 2)`.
 
 ***
 
