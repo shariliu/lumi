@@ -8,7 +8,7 @@ output: html_document
 
 # Tables and Figures
 
-**Table 1.** Summary of conditions, design, and sample sizes of Experiments 1-5, and Skerry et al (2013) (SCS) Experiments 1-5, including sample size (N), what motor training procedures were used (effective sticky mittens, ineffective non-sticky mittens, or none), the goal of the person reaching (changing an object’s state, or picking it up), whether the person acted on the object in a spatiotemporally contingent manner (causal: yes, or no), and whether the person wore a mitten (yes or no). Conditions listed under a single experiment (e.g. Exp 1 and 3) included random assignment to condition. For stimuli, see Fig 1. * indicates direct replication. For stimuli, see Fig 1.
+**Table x (not in paper).** Summary of conditions, design, and sample sizes of Experiments 1-5, and Skerry et al (2013) (SCS) Experiments 1-5, including sample size (N), what motor training procedures were used (effective sticky mittens, ineffective non-sticky mittens, or none), the goal of the person reaching (changing an object’s state, or picking it up), whether the person acted on the object in a spatiotemporally contingent manner (causal: yes, or no), and whether the person wore a mitten (yes or no). Conditions listed under a single experiment (e.g. Exp 1 and 3) included random assignment to condition. For stimuli, see Fig 1. * indicates direct replication. For stimuli, see Fig 1.
 
 Experiment | N | Training |  Goal | Habituation | Causal | Mitten | Stimuli
 ---------- | - | ---------| ----- | ----------- | ------ | ------ | -------
@@ -46,7 +46,7 @@ ipak <- function (pkg) {
 if(!"devtools" %in% rownames(installed.packages())) install.packages("devtools")
 
 
-packages <- c("tidyverse", "Hmisc", "lattice", "multcomp", "lsmeans", "schoRsch", "influence.ME", "devtools", "skimr", "simr", "lme4", "sjPlot", "effects", "lmerTest", "compute.es", "pwr", "stringr", "irr", "predictmeans", "grid", "gridExtra")
+packages <- c("tidyverse", "Hmisc", "lattice", "multcomp", "lsmeans", "schoRsch", "influence.ME", "devtools", "skimr", "simr", "lme4", "sjPlot", "effects", "lmerTest", "compute.es", "pwr", "stringr", "irr", "predictmeans", "grid", "gridExtra", "ggthemes")
 
 ipak(packages)
 
@@ -289,6 +289,7 @@ fig2.raw.full <- fig2.raw +
   facet_grid(~experiment+training+goal+hab+causal+mitten)+
   scale_x_discrete(labels = c("ineff","eff"))+
   theme_bw(14)+
+  scale_fill_ptol()+
   theme(legend.position="none", axis.title.x=element_blank(),strip.text.x = element_blank())
 ```
 
@@ -307,6 +308,7 @@ fig2.prop.full <- fig2.prop +
   geom_hline(yintercept=0.5, alpha=0.4)+
   facet_grid(~experiment+training+goal+hab+causal+mitten+stimuli)+
   theme_bw(14)+
+  scale_fill_ptol()+
   theme(strip.placement = "outside") +
   theme(legend.position="none", axis.text.x = element_blank(), axis.title.x=element_blank())
 
@@ -729,7 +731,7 @@ model1.all.betas <- fixef(model1.all.beta)
 ```
 
 ***
-**Table 2.** Regression table for model investigating predictors of sensitivity to action efficiency across Experiment 1-5 and all experiments from Skerry et al. (2013) (total N=`r length(unique(lumi.wide$subj_id))`, `r length(unique(lumi.wide$subj_id))-meta.exclude.n` included in final analysis, `r meta.exclude.n` excluded on the basis of Cook's Distance). Dependent measure is proportion looking towards the inefficient reach, averaged across 3 test trials during test. Categorical predictors were coded using sum contrasts, and fixed effects from the model should therefore be interpreted with respect to the grand mean (i.e. with respect to 0). Degrees of freedom were generated using the Satterthwaite approximation method. Model formula: `prop.ineff.all ~ training + goal + hab + causal + mitten + (1|experiment) + (1|ageday) + (1|sex) + (1|paper)`.
+**Table 1.** Regression table for model investigating predictors of sensitivity to action efficiency across Experiment 1-5 and all experiments from Skerry et al. (2013) (total N=`r length(unique(lumi.wide$subj_id))`, `r length(unique(lumi.wide$subj_id))-meta.exclude.n` included in final analysis, `r meta.exclude.n` excluded on the basis of Cook's Distance). Dependent measure is proportion looking towards the inefficient reach, averaged across 3 test trials during test. Categorical predictors were coded using sum contrasts, and fixed effects from the model should therefore be interpreted with respect to the grand mean (i.e. with respect to 0). Degrees of freedom were generated using the Satterthwaite approximation method. Model formula: `prop.ineff.all ~ training + goal + hab + causal + mitten + (1|experiment) + (1|ageday) + (1|sex) + (1|paper)`.
 
 
 ```{r meta_table, include=TRUE}
@@ -758,7 +760,7 @@ plot(allEffects(model1.all.cooks),
 ```
 
 
-**Figure 3.** Effect plots for model investigating predictors of sensitivity to action efficiency across Experiments 1-5 and Skerry et al. (2013). Each point shows estimates of effects at each level of all categorical predictors. Error bars indicate 95% confidence intervals. See Table 2 for full results.
+**Figure 3.** Effect plots for model investigating predictors of sensitivity to action efficiency across Experiments 1-5 and Skerry et al. (2013). Each point shows estimates of effects at each level of all categorical predictors. Error bars indicate 95% confidence intervals. See Table 1 for full results.
 
 ***
 
