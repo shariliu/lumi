@@ -329,8 +329,8 @@ grid.arrange(fig2.prop.full, fig2.raw.full, heights = c(0.5,0.5))
 
 grid.text("Experiment", x = 0.07, y = 0.97)
 grid.text("Goal", x = 0.07, y = 0.94)
-grid.text("Habituation", x = 0.07, y = 0.91)
-grid.text("Causal", x = 0.07, y = 0.88)
+grid.text("Action", x = 0.07, y = 0.91)
+grid.text("Contact Relation", x = 0.07, y = 0.88)
 grid.text("Mitten", x = 0.07, y = 0.85)
 grid.text("Stimuli", x = 0.07, y = 0.82)
 
@@ -752,6 +752,7 @@ exp3.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.3")$newlook, filter(lu
 exp4.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.4")$newlook, filter(lumi.rel, experiment == "Exp.4")$look.orig), model = "twoway", type = "agreement", unit = "single")
 exp5.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.5")$newlook, filter(lumi.rel, experiment == "Exp.5")$look.orig), model = "twoway", type = "agreement", unit = "single")
 
+table(lumi.rel$agree, lumi.rel$experiment)
 ```
 
 
@@ -813,8 +814,8 @@ grid.arrange(figS1.prop.full, figS1.raw.full, heights = c(0.5,0.5))
 grid.text("Experiment", x = 0.05, y = 0.978)
 grid.text("Training", x = 0.05, y = .95)
 grid.text("Goal", x = 0.05, y = 0.89)
-grid.text("Habituation", x = 0.05, y = .92)
-grid.text("Causal", x = 0.05, y = 0.861)
+grid.text("Action", x = 0.05, y = .92)
+grid.text("Contact Relation", x = 0.03, y = 0.861)
 grid.text("Mitten", x = 0.05, y = 0.832)
 grid.text("Stimuli", x = 0.05, y = 0.805)
 
@@ -907,6 +908,11 @@ relplot +
   xlab("Experiment") + ylab("Discrepancy (New - Original) (s)") +
   theme_linedraw(15)+
   theme(legend.position="none")  
+
+rel.comp <- lmer(gap ~ experiment + (1|coder),
+     data = lumi.rel)
+plot(allEffects(rel.comp))
+difflsmeans(rel.comp, test.effs="experiment")
 ```
 
 **Figure S4.** Discrepancy between original and new coding of looking times during test trials in seconds. 
