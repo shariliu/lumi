@@ -106,9 +106,9 @@ lumi.long$testpair <- relevel(lumi.long$testpair, ref = "first")
 lumi.wide$first.test <- relevel(lumi.wide$first.test, ref = "efficient")
 lumi.wide$goal <- relevel(lumi.wide$goal, ref = "pick.up")
 lumi.wide$hab <- relevel(lumi.wide$hab, ref = "unconstrained")
-lumi.wide$mitten <- relevel(lumi.wide$mitten, ref = "no.mitten")
+lumi.wide$mitten <- relevel(lumi.wide$mitten, ref = "no")
 lumi.wide$training <- relevel(lumi.wide$training, ref = "no.training")
-lumi.wide$causal <- relevel(lumi.wide$causal, ref = "no.causal")
+lumi.wide$causal <- relevel(lumi.wide$causal, ref = "no")
 lumi.wide$sex <- relevel(lumi.wide$sex, ref = "m")
 lumi.wide$habbed <- factor(lumi.wide$habbed)
 lumi.wide$habbed <- relevel(lumi.wide$habbed, ref = "0")
@@ -282,7 +282,7 @@ fig2.raw.LBS <- ggplot(data = dplyr::filter(lumi.raw.avg, paper == "LBS"), aes(t
 fig2.raw.full <- fig2.raw.LBS +
   geom_boxplot(outlier.colour = NA, alpha = 0.5)+
   stat_summary(fun.y = mean, geom = "point", shape=21, size=3, position = "dodge", colour = "black", alpha = 0.5) +
-  ylab("\n \n \n \n Looking Time (s)") +
+  ylab("\n \n \n \n \n \n \n Looking Time (s)") +
   xlab("Test Event")+
   coord_cartesian(ylim = c(0, 40)) +
   geom_point(alpha = 0.1)+
@@ -303,7 +303,7 @@ fig2.prop.full <- fig2.prop.LBS +
   geom_boxplot(alpha = 0.5)+
   geom_violin(fill = NA, width = 0.5)+
   stat_summary(fun.y = mean, geom = "point", shape =21, size=3, position = "dodge", colour = "black", alpha = 0.5) +
-  ylab("\n \n \n Proportion Looking \n to Inefficient") +
+  ylab("\n \n \n \n \n \n Proportion Looking \n to Inefficient") +
   xlab(element_blank())+
   geom_jitter(width = .05, alpha = 0.2)+
   coord_cartesian(ylim = c(0.2,0.8)) +
@@ -327,16 +327,16 @@ grid.arrange(fig2.prop.full, fig2.raw.full, heights = c(0.5,0.5))
 # grid.text("Mitten", x = 0.05, y = 0.832)
 # grid.text("Stimuli", x = 0.05, y = 0.805)
 
-grid.text("Experiment", x = 0.07, y = 0.97)
-grid.text("Goal", x = 0.07, y = 0.94)
-grid.text("Action", x = 0.07, y = 0.91)
-grid.text("Contact Relation", x = 0.07, y = 0.88)
-grid.text("Mitten", x = 0.07, y = 0.85)
-grid.text("Stimuli", x = 0.07, y = 0.82)
+grid.text("Experiment", x = 0.1, y = 0.97)
+grid.text("Goal", x = 0.1, y = 0.94)
+grid.text("Action relative to barrier", x = 0.1, y = 0.91)
+grid.text("Action on contact", x = 0.1, y = 0.88)
+grid.text("Actor wearing mitten", x = 0.1, y = 0.85)
+grid.text("Displays", x = 0.1, y = 0.82)
 
 ```
 
-**Figure 2.** Looking time in towards the efficient versus inefficient reach (bottom), and proportion looking towards the inefficient reach (top) at test across Experiments 1-5 (N=152). Labels above each panel list the experiment name (Exp. 1-5), type of action during habituation (constrained or unconstrained by a barrier), goal (state.change or pick.up), whether these actions involved contact with the object (yes.causal or no.causal), whether the actor wore a mitten (yes.mitten or no.mitten), and stimuli listed in Figure 1. Error bars around means indicate within-subjects 95% confidence intervals (bottom) and bootstrapped 95% confidence intervals (top). Individual points (top) or pairs of points (bottom) indicate data from a single participant. Horizontal bars within boxes indicate medians, and boxes indicate the middle 2 quartiles of data. Violin plots (top) indicate distribution of data, area scaled proportionally to the number of observations. 
+**Figure 2.** Looking time in towards the efficient versus inefficient reach (bottom), and proportion looking towards the inefficient reach (top) at test across Experiments 1-5 (N=152). Labels above each panel list the experiment name (Exp. 1-5), type of action during habituation (constrained or unconstrained by a barrier), goal (state.change or pick.up), whether these actions involved contact with the object (yes or no), whether the actor wore a mitten (yes or no), and stimuli listed in Figure 1. Error bars around means indicate within-subjects 95% confidence intervals (bottom) and bootstrapped 95% confidence intervals (top). Individual points (top) or pairs of points (bottom) indicate data from a single participant. Horizontal bars within boxes indicate medians, and boxes indicate the middle 2 quartiles of data. Violin plots (top) indicate distribution of data, area scaled proportionally to the number of observations. 
 
 ***
 
@@ -710,9 +710,9 @@ op <- options(contrasts = c("contr.sum", "contr.poly"))
 # strangely, we need to flip reference levels so that ref gets compred against grand mean
 lumi.wide$goal <- relevel(lumi.wide$goal, ref = "state.change")
 lumi.wide$hab <- relevel(lumi.wide$hab, ref = "constrained")
-lumi.wide$mitten <- relevel(lumi.wide$mitten, ref = "yes.mitten")
+lumi.wide$mitten <- relevel(lumi.wide$mitten, ref = "yes")
 lumi.wide$training <- factor(lumi.wide$training, levels = c("effective.training", "ineffective.training", "no.training"))
-lumi.wide$causal <- relevel(lumi.wide$causal, ref = "yes.causal")
+lumi.wide$causal <- relevel(lumi.wide$causal, ref = "yes")
 
 # full exploratory model
 model1.all <- lmer(formula = prop.ineff.all ~ training + goal + hab + causal + mitten + (1|experiment) + (1|ageday) + (1|sex) + (1|paper), data = lumi.wide)
@@ -771,7 +771,7 @@ figS1.raw <- ggplot(data = dplyr::filter(lumi.raw.avg), aes(type, look, fill=exp
 figS1.raw.full <- figS1.raw +
   geom_boxplot(outlier.colour = NA, alpha = 0.5)+
   stat_summary(fun.y = mean, geom = "point", shape=21, size=3, position = "dodge", colour = "black", alpha = 0.5) +
-  ylab("\n \n \n \n Looking Time (s)") +
+  ylab("\n \n \n \n \n \n \n Looking Time (s)") +
   xlab("Test Event")+
   coord_cartesian(ylim = c(0, 40)) +
   geom_point(alpha = 0.1)+
@@ -791,7 +791,7 @@ figS1.prop.full <- figS1.prop +
   geom_boxplot(alpha = 0.5)+
   geom_violin(fill = NA, width = 0.5)+
   stat_summary(fun.y = mean, geom = "point", shape =21, size=3, position = "dodge", colour = "black", alpha = 0.5) +
-  ylab("\n \n \n Proportion Looking \n to Inefficient") +
+  ylab("\n \n \n \n \n \n Proportion Looking \n to Inefficient") +
   xlab(element_blank())+
   geom_jitter(width = .05, alpha = 0.2)+
   coord_cartesian(ylim = c(0.2,0.8)) +
@@ -807,17 +807,17 @@ figS1.prop.full <- figS1.prop +
 
 grid.arrange(figS1.prop.full, figS1.raw.full, heights = c(0.5,0.5))
 
-grid.text("Experiment", x = 0.05, y = 0.978)
-grid.text("Training", x = 0.05, y = .95)
-grid.text("Goal", x = 0.05, y = 0.89)
-grid.text("Action", x = 0.05, y = .92)
-grid.text("Contact Relation", x = 0.048, y = 0.861)
-grid.text("Mitten", x = 0.05, y = 0.832)
-grid.text("Stimuli", x = 0.05, y = 0.805)
+grid.text("Experiment", x = 0.07, y = 0.978)
+grid.text("Motor training", x = 0.07, y = .95)
+grid.text("Action relative to barrier", x = 0.07, y = 0.89)
+grid.text("Goal", x = 0.07, y = .92)
+grid.text("Action on contact", x = 0.07, y = 0.861)
+grid.text("Actor wearing mitten", x = 0.07, y = 0.832)
+grid.text("Displays", x = 0.07, y = 0.805)
 
 ```
 
-**Figure S1**. Looking time in towards the efficient versus inefficient reach (bottom), and proportion looking towards the inefficient reach (top) at test across Experiments 1-5 (n=152) and across Experiments 1-5 in Skerry et al. (2013) (n=112). Labels above each panel list the experiment name (Exp. 1-5, SCS Exp. 1-5), type of motor training (none, ineffective non-sticky mittens, or effective sticky mittens), type of action during habituation (constrained or unconstrained by a barrier), goal (state.change or pick.up), whether actions resulted in contact with the object (yes.causal or no.causal), whether the actor wore a mitten (yes.mitten or no.mitten), and stimuli listed in Figure 1. Error bars around means indicate within-subjects 95% confidence intervals (bottom) and bootstrapped 95% confidence intervals (top). Individual points (top) or pairs of points (bottom) indicate data from a single participant. Horizontal bars within boxes indicate medians, and boxes indicate the middle 2 quartiles of data. Violin plots (top) indicate distribution of data, area scaled proportionally to the number of observations.
+**Figure S1**. Looking time in towards the efficient versus inefficient reach (bottom), and proportion looking towards the inefficient reach (top) at test across Experiments 1-5 (n=152) and across Experiments 1-5 in Skerry et al. (2013) (n=112). Labels above each panel list the experiment name (Exp. 1-5, SCS Exp. 1-5), type of motor training (none, ineffective non-sticky mittens, or effective sticky mittens), type of action during habituation (constrained or unconstrained by a barrier), goal (state.change or pick.up), whether actions resulted in contact with the object (yes or no), whether the actor wore a mitten (yes or no), and stimuli listed in Figure 1. Error bars around means indicate within-subjects 95% confidence intervals (bottom) and bootstrapped 95% confidence intervals (top). Individual points (top) or pairs of points (bottom) indicate data from a single participant. Horizontal bars within boxes indicate medians, and boxes indicate the middle 2 quartiles of data. Violin plots (top) indicate distribution of data, area scaled proportionally to the number of observations.
 
 
 
@@ -839,7 +839,7 @@ plot(allEffects(model1.all.cooks),
 ```
 
 
-**Figure S2.** Effect plots for model investigating predictors of sensitivity to action efficiency across Experiments 1-5 and Skerry et al. (2013) (total N=264, 247 included in final analysis, 17 excluded on the basis of Cook’s Distance). Each point shows estimates of effects at each level of all categorical predictors: Type of motor training (none, ineffective non-sticky mittens, or effective sticky mittens), the goal of the actor (state change vs pick up), action during habituation (constrained or unconstrained by a barrier), whether actions resulted in contact with the object (yes.causal or no.causal), whether the actor wore a mitten (yes.mitten or no.mitten). Error bars indicate 95% confidence intervals. See Table S1 for full results.
+**Figure S2.** Effect plots for model investigating predictors of sensitivity to action efficiency across Experiments 1-5 and Skerry et al. (2013) (total N=264, 247 included in final analysis, 17 excluded on the basis of Cook’s Distance). Each point shows estimates of effects at each level of all categorical predictors: Type of motor training (none, ineffective non-sticky mittens, or effective sticky mittens), the goal of the actor (state change vs pick up), action during habituation (constrained or unconstrained by a barrier), whether actions resulted in contact with the object (yes or no), whether the actor wore a mitten (yes or no). Error bars indicate 95% confidence intervals. See Table S1 for full results.
 
 ***
 
@@ -942,12 +942,20 @@ habplot2 +
   geom_point(alpha = 0.2) +
   geom_line(aes(group = subj_id), alpha = 0.2)+
   geom_smooth()+
+  scale_x_continuous(breaks=c(1,3,6,9,12))+
   ylim(0, 45)+
-  ylab("Looking Time (s)") +
+  ylab("\n \n \n \n \n \n Looking Time (s)") +
   xlab("Habituation Trial (1-12)")+
-  facet_grid(~experiment+training+goal+hab+causal+mitten)+
-  theme_linedraw(15)+
+  facet_grid(~experiment+goal+hab+causal+mitten+stimuli)+
+  theme_bw(15)+
   theme(legend.position="none")
+
+grid.text("Experiment", x = 0.08, y = 0.97)
+grid.text("Goal", x = 0.08, y = 0.94)
+grid.text("Action relative to barrier", x = 0.08, y = 0.91)
+grid.text("Action on contact", x = 0.08, y = 0.88)
+grid.text("Actor wearing mitten", x = 0.08, y = 0.85)
+grid.text("Displays", x = 0.08, y = 0.82)
 
 ```
 
