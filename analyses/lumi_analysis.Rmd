@@ -263,18 +263,22 @@ fig2.raw <- ggplot(data = dplyr::filter(lumi.raw.avg), aes(type, look, fill=expe
 fig2.raw.LBS <- ggplot(data = dplyr::filter(lumi.raw.avg, paper == "LBS"), aes(type, look, fill=experiment))
 fig2.raw.full <- fig2.raw.LBS +
   geom_boxplot(outlier.colour = NA, alpha = 0.5)+
-  stat_summary(fun.y = mean, geom = "point", shape=21, size=3, position = "dodge", colour = "black", alpha = 0.5) +
+  stat_summary(fun.y = mean, geom = "point", shape=21, size=3, position = "dodge", colour = "black", fill = "white") +
   ylab("\n \n \n \n \n \n \n Looking Time (s)") +
   xlab("Test Event")+
   coord_cartesian(ylim = c(0, 40)) +
   geom_point(alpha = 0.1)+
   geom_line(alpha = 0.1, aes(group = subj_id))+
-  geom_errorbar(data = filter(summary.avg, paper == "LBS"), size = .5, width = 0, aes(ymin=look-ci, ymax=look+ci)) +
+  geom_errorbar(data = filter(summary.avg, paper == "LBS"), size = 1, width = 0, colour = "red", aes(ymin=look-ci, ymax=look+ci)) +
   facet_grid(~experiment+goal+hab+causal+mitten)+
   scale_x_discrete(labels = c("ineff","eff"))+
   theme_bw(14)+
   scale_fill_ptol()+
   theme(legend.position="none", strip.text.x = element_blank())
+
+fig2.raw.full
+
+
 ```
 
 ```{r fig2b, fig.width = 20, fig.height=11, include=TRUE}
@@ -284,12 +288,12 @@ fig2.prop.LBS <- ggplot(data = dplyr::filter(lumi.prop.avg, paper == "LBS"), aes
 fig2.prop.full <- fig2.prop.LBS + 
   geom_boxplot(alpha = 0.5)+
   geom_violin(fill = NA, width = 0.5)+
-  stat_summary(fun.y = mean, geom = "point", shape =21, size=3, position = "dodge", colour = "black", alpha = 0.5) +
+  stat_summary(fun.y = mean, geom = "point", shape =21, size=3, position = "dodge", colour = "black", fill = "white") +
   ylab("\n \n \n \n \n \n Proportion Looking \n to Inefficient") +
   xlab(element_blank())+
   geom_jitter(width = .05, alpha = 0.2)+
   coord_cartesian(ylim = c(0.2,0.8)) +
-  stat_summary(fun.data = mean_cl_boot, geom = "errorbar", colour="black", position = position_dodge(width = 5), width = 0) +
+  stat_summary(fun.data = mean_cl_boot, geom = "errorbar", colour="red", position = position_dodge(width = 5), width = 0, size = 1) +
   geom_hline(yintercept=0.5, alpha=0.4)+
   facet_grid(~experiment+goal+hab+causal+mitten+stimuli)+
   theme_bw(14)+
