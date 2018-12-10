@@ -1,8 +1,8 @@
 
 ---
-title: "Pre-reaching infants are sensitive to abstract properties of intentional action"
+title: "Pre-reaching infants appreciate the costs and causal intentions behind other people's reaches"
 author: "Shari Liu"
-date: "September 22, 2018"
+date: "Dec 10, 2018"
 output:
   html_document: default
 ---
