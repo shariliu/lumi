@@ -9,7 +9,7 @@ output:
 
 # Tables and Figures
 
-![**Figure 1.** Still frames from videos shown to participants in Experiments 1-5, including stimuli from habituation (A) and test (B). In each video, a person reached for and caused a change in an object (H1-H3, T1-T2), or picked up the object (H4-H5, T3-T4), over a barrier (H1- H2, H4-H5) or over empty space (H2, T1-T4).  The person either acted on the object by contacting it (H1-H2, H4-H5, T1, T3-T4) or produced the same effect from a distance of 50 pixels, after a 0.5s delay (H3, T2), and either performed these actions while wearing a mitten (H1-H4, T1-T3) or with a bare hand (H5, T4) During test (B), the person either reached directly for the object on a novel but efficient trajectory (left panels), or in a curvilinear fashion on the familiar but inefficient trajectory (right panels).](/Users/shariliu/Documents/HarvardLDS/Studies/LUMI/github/analyses/fig1.jpg)
+![**Figure 1.** Still frames from videos shown to participants in Experiments 1-5, including stimuli from habituation (A) and test (B). In each video, a person reached for and picked up the object (H1-H2, T1-H2), or caused a change in an object (H3-H5, T3-T4), over a barrier (H1-H3, H5) or over empty space (H4, T1-T4). The person either acted on the object by contacting it (H1-H4, T1-T3) or produced the same effect from a distance of 50 pixels, after a 0.5s delay (H5, T4), and either performed these actions while wearing a mitten (H1, H3-H5, T1, T3-T4) or with a bare hand (H2, T2) During test (B), the person either reached directly for the object on a novel but efficient trajectory (left panels), or in a curvilinear fashion on the familiar but inefficient trajectory (right panels). .](/Users/shariliu/Documents/HarvardLDS/Studies/LUMI/github/analyses/fig1.jpg)
 
 ***
 
@@ -263,7 +263,7 @@ fig2.raw <- ggplot(data = dplyr::filter(lumi.raw.avg), aes(type, look, fill=expe
 fig2.raw.LBS <- ggplot(data = dplyr::filter(lumi.raw.avg, paper == "LBS"), aes(type, look, fill=experiment))
 fig2.raw.full <- fig2.raw.LBS +
   geom_boxplot(outlier.colour = NA, alpha = 0.5)+
-  stat_summary(fun.y = mean, geom = "point", shape=21, size=3, position = "dodge", colour = "black", fill = "white") +
+  stat_summary(fun.y = mean, geom = "point", shape=21, size=3, position = "dodge", colour = "red", fill = "red") +
   ylab("\n \n \n \n \n \n \n Looking Time (s)") +
   xlab("Test Event")+
   coord_cartesian(ylim = c(0, 40)) +
@@ -288,7 +288,7 @@ fig2.prop.LBS <- ggplot(data = dplyr::filter(lumi.prop.avg, paper == "LBS"), aes
 fig2.prop.full <- fig2.prop.LBS + 
   geom_boxplot(alpha = 0.5)+
   geom_violin(fill = NA, width = 0.5)+
-  stat_summary(fun.y = mean, geom = "point", shape =21, size=3, position = "dodge", colour = "black", fill = "white") +
+  stat_summary(fun.y = mean, geom = "point", shape =21, size=3, position = "dodge", colour = "red", fill = "red") +
   ylab("\n \n \n \n \n \n Proportion Looking \n to Inefficient") +
   xlab(element_blank())+
   geom_jitter(width = .05, alpha = 0.2)+
@@ -389,9 +389,15 @@ report <- function(table, index, places, tails) {
 ```
 
 
+```{r}
+plot <- ggplot(lumi.raw.tp %>% filter(testpair == "first" & experiment == "Exp.1" & hab == "constrained"), aes(testtype, look)) 
+plot + geom_boxplot() + facet_wrap(~first.test)
+```
+
+
 # Results (Main Text)
 ## Infants' analysis of causal vs non-causal actions
-### Experiment 1
+### Experiment 3
 ```{r exp1}
 # participant info
 exp1.info <- ages(exp1.avg)
@@ -447,7 +453,7 @@ Infants responded differently to the test events across the two habituation cond
 
 
 
-### Experiment 2
+### Experiment 4
 ```{r exp2}
 # participant info
 exp2.info <- ages(exp2.avg)
@@ -520,7 +526,7 @@ names(exp12.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
 
 In Experiment 2, pre-registered at https://osf.io/a5byn/, we tested whether this expectation depends on infants’ construal of the actor as a causal agent, who intends to change the state of the object on contact. We did this by introducing digital manipulations that abolish causal perception in older infants and adults (7–9, 39, 40) to the habituation and test events from Experiment 1. Infants (N=`r length(unique(exp2.avg$subj_id))`; Mean age=`r round(exp2.info$mean,0)` days; range=`r exp2.info$min`-`r exp2.info$max`; `r exp2.info$f` female) saw videos identical to those from the constrained condition of Experiment 1, except that person’s hand never contacted the object (stopping 50 pixels, or 2 cm above it), and the object changed state after a 0.5 second delay (H3, T2). In contrast to Experiment 1, infants looked equally at test trials showing the inefficient and efficient actions (M~ineff~=`r summary.avg$look[6]`s, M~eff~=`r summary.avg$look[5]`s, `r report(exp2.findings, 2, 3, 2)`, mixed effects model with test event as fixed effect and participants as a random intercept). Across Experiments 1 (H1, T1) and 2 (H3, T2), infants responded differently to the test events depending on whether the person acted on the object on contact  (`r report(exp12.findings, 4, 3, 2)`, mixed effects model with fixed interaction between causal intention and test event and participants as a random intercept). These findings suggest that infants expect others’ actions to be efficient if and only if these actions are guided by causal intentions. 
 
-### Experiment 3
+### Experiment 5
 ```{r exp3}
 # participant info
 exp3.info <- ages(exp3.avg)
