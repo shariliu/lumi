@@ -99,7 +99,7 @@ lumi.wide$pref <- relevel(lumi.wide$pref, ref = "eff")
 # section data based on dv
 lumi.prop.avg <- filter(lumi.long, type == "prop.ineff.all")
 lumi.raw.avg <- filter(lumi.long, type == "avg.eff" | type == "avg.ineff")
-lumi.raw.avg$type <- relevel(lumi.raw.avg$type, ref = "avg.ineff")
+lumi.raw.avg$type <- relevel(lumi.raw.avg$type, ref = "avg.eff")
 lumi.prop.tp <- filter(lumi.long, type == "prop.ineff1" | type == "prop.ineff2" | type == "prop.ineff3")
 lumi.raw.tp <- filter(lumi.long, type == "ineff.1" | type == "ineff.2" | type == "ineff.3" | type == "eff.1" |type == "eff.2"| type == "eff.3")
 ```
@@ -245,7 +245,7 @@ summarySEwithin <- function(data=NULL, measurevar, betweenvars=NULL, withinvars=
 
 
 ## get within-subjects CIs for plotting
-summary.avg <- summarySEwithin(data = dplyr::filter(lumi.raw.avg), measurevar = "look", betweenvars = c("experiment", "training", "hab","goal","mitten","causal", "paper"), withinvars = "type",
+summary.avg <- summarySEwithin(data = dplyr::filter(lumi.raw.avg), measurevar = "look", betweenvars = c("experiment", "training", "hab","goal","mitten","causal", "paper", "stimuli"), withinvars = "type",
                                   idvar = "subj_id")
 kable(summary.avg, caption = "Summary of Avg Looks to Eff and Ineff Actions")
 
@@ -256,29 +256,53 @@ prop.tp
 
 ```
 
-```{r fig2a, fig.width = 20, include=TRUE}
 
+```{r figsingle}
+fig2.single <- ggplot(data = dplyr::filter(lumi.raw.avg, experiment == "SCS.Exp.1"), aes(type, look, fill=type))
+fig2.single +
+  # geom_boxplot(outlier.colour = NA, alpha = .8)+
+  stat_summary(fun.y = mean, geom = "bar", colour="black") +
+  stat_summary(fun.y = mean, geom = "point", shape=21, size=3, position = "dodge", colour = "red", fill = "red") +
+  ylab("Looking Time (s)") +
+  xlab("Test Event")+
+  coord_cartesian(ylim = c(0, 40)) +
+  # geom_point(alpha = 0.5)+
+  # geom_line(alpha = 0.5, aes(group = subj_id))+
+  geom_errorbar(data = filter(summary.avg, experiment == "SCS.Exp.1"), size = 1, width = 0, colour = "red", aes(ymin=look-ci, ymax=look+ci)) +
+  facet_grid(~experiment+goal+hab+causal+mitten)+
+  scale_x_discrete(labels = c("inefficient","efficient"))+
+  theme_bw(14)+
+  scale_fill_brewer(palette="Greys")+
+  theme(legend.position="none")
+
+```
+
+
+```{r fig2a, fig.width = 20, include=TRUE}
 # avg looks to eff and ineff, grouped by experiment, with full variable info 
 fig2.raw <- ggplot(data = dplyr::filter(lumi.raw.avg), aes(type, look, fill=experiment))
-fig2.raw.LBS <- ggplot(data = dplyr::filter(lumi.raw.avg, paper == "LBS"), aes(type, look, fill=experiment))
-fig2.raw.full <- fig2.raw.LBS +
+fig2.raw.LBS <- ggplot(data = lumi.raw.avg %>% filter(paper == "LBS"), aes(type, look, fill=experiment))
+fig2.raw.LBS +
   geom_boxplot(outlier.colour = NA, alpha = .8)+
   stat_summary(fun.y = mean, geom = "point", shape=21, size=3, position = "dodge", colour = "red", fill = "red") +
   ylab("\n \n \n \n \n \n \n Looking Time (s)") +
   xlab("Test Event")+
-  coord_cartesian(ylim = c(0, 40)) +
+  coord_cartesian(ylim = c(0, 45)) +
   geom_point(alpha = 0.1)+
   geom_line(alpha = 0.1, aes(group = subj_id))+
   geom_errorbar(data = filter(summary.avg, paper == "LBS"), size = 1, width = 0, colour = "red", aes(ymin=look-ci, ymax=look+ci)) +
-  facet_grid(~experiment+goal+hab+causal+mitten)+
-  scale_x_discrete(labels = c("ineff","eff"))+
+  scale_x_discrete(labels = c("inefficient","efficient"))+
   theme_bw(14)+
+  facet_grid(~experiment+goal+hab+causal+mitten+stimuli)+
   scale_fill_brewer(palette="Greys")+
-  theme(legend.position="none", strip.text.x = element_blank())
+  theme(legend.position="none")
 
-fig2.raw.full
-
-
+grid.text("Experiment", x = 0.08, y = 0.95)
+grid.text("Goal", x = 0.08, y = 0.90)
+grid.text("Action relative to barrier", x = 0.08, y = 0.85)
+grid.text("Action on contact", x = 0.08, y = 0.80)
+grid.text("Actor wearing mitten", x = 0.08, y = 0.75)
+grid.text("Displays", x = 0.08, y = 0.70)
 ```
 
 ```{r fig2b, fig.width = 20, fig.height=11, include=TRUE}
@@ -313,12 +337,12 @@ grid.arrange(fig2.prop.full, fig2.raw.full, heights = c(0.5,0.5))
 # grid.text("Mitten", x = 0.05, y = 0.832)
 # grid.text("Stimuli", x = 0.05, y = 0.805)
 
-grid.text("Experiment", x = 0.1, y = 0.97)
-grid.text("Goal", x = 0.1, y = 0.94)
-grid.text("Action relative to barrier", x = 0.1, y = 0.91)
-grid.text("Action on contact", x = 0.1, y = 0.88)
-grid.text("Actor wearing mitten", x = 0.1, y = 0.85)
-grid.text("Displays", x = 0.1, y = 0.82)
+# grid.text("Experiment", x = 0.1, y = 0.97)
+# grid.text("Goal", x = 0.1, y = 0.94)
+# grid.text("Action relative to barrier", x = 0.1, y = 0.91)
+# grid.text("Action on contact", x = 0.1, y = 0.88)
+# grid.text("Actor wearing mitten", x = 0.1, y = 0.85)
+# grid.text("Displays", x = 0.1, y = 0.82)
 
 ```
 
@@ -340,7 +364,9 @@ op <- options(contrasts = c("contr.treatment", "contr.poly")) # treatment contra
 
 # function that returns column of standardized betas from lmer model
 gen.beta <- function(model) {
-  return(t(fixef(model)))
+    df <- data.frame(fixef(model))
+    names(df) <- c("beta")
+    return(df)
 }
 
 # function that computes CIs and returns them in df
@@ -353,14 +379,14 @@ gen.ci <- function(model) {
 # function that converts model summary (lmer) to df
 gen.m <- function(model) {
   df <- data.frame(coef(summary(model)))
-  names(df) <- c("est", "se", "df", "t", "p")
+  names(df) <- c("b", "se", "df", "t", "p")
   return(df)
 }
 
 # function that converts model summary (lm) to df
 gen.lm <- function(model) {
   df <- data.frame(coef(summary(model)))
-  names(df) <- c("est", "se", "t", "p")
+  names(df) <- c("b", "se", "t", "p")
   return(df)
 }
 
@@ -400,17 +426,80 @@ plot + geom_boxplot() + facet_wrap(~first.test)
 ## Infants’ analysis of grasping and entraining actions
 
 ### Experiments 1 and 2
-```{r exp12}
+```{r exp1}
 # participant info
 exp1.info <- ages(exp1.avg)
 exp2.info <- ages(exp2.avg)
 
+# null model
+model0.exp1 <- lmer(formula = loglook ~ 1 + (1|subj_id),
+               data = exp1.avg, REML = FALSE)
+
+model1.exp1 <- lmer(formula = loglook ~ type + (1|subj_id),
+                     data = exp1.avg, REML=FALSE)
+summary(model1.exp1)
+
+# identify and check influence of observations
+plot(influence(model1.exp1, "subj_id"), which="cook",
+     cutoff=4/20, sort=TRUE,
+     xlab="Cook´s Distance",
+     ylab="Subject ID")
+
+# 3 influential observations identified
+model1.exp1.cooks <- lmer(formula = loglook ~ type + (1|subj_id),
+                     data = filter(exp1.avg, subj_id != "S4_9"), REML=FALSE)
+model1.exp1.table <- gen.m(model1.exp1.cooks)
+model1.exp1.ci <- gen.ci(model1.exp1.cooks)[3:4,]
+
+# standardized values
+model1.exp1.beta <- lmer(formula = scale(loglook) ~ type + (1|subj_id),
+                     data = filter(exp12.avg, subj_id != "S4_9"), REML=FALSE)
+model1.exp1.betas <- gen.beta(model1.exp1.beta)
+
+# look at contrasts within each habituation condition
+exp1.findings <- cbind(model1.exp1.table, model1.exp1.betas, model1.exp1.ci)
+```
+
+
+```{r exp2}
+# null model
+model0.exp2 <- lmer(formula = loglook ~ 1 + (1|subj_id),
+               data = exp2.avg, REML = FALSE)
+
+model1.exp2 <- lmer(formula = loglook ~ type + (1|subj_id),
+                     data = exp2.avg, REML=FALSE)
+summary(model1.exp2)
+
+# identify and check influence of observations
+plot(influence(model1.exp2, "subj_id"), which="cook",
+     cutoff=4/20, sort=TRUE,
+     xlab="Cook´s Distance",
+     ylab="Subject ID")
+
+# 3 influential observations identified
+model1.exp2.cooks <- lmer(formula = loglook ~ type + (1|subj_id),
+                     data = filter(exp2.avg, subj_id != "S5_7" & subj_id != "S5_10"), REML=FALSE)
+model1.exp2.table <- gen.m(model1.exp2.cooks)
+model1.exp2.ci <- gen.ci(model1.exp2.cooks)[3:4,]
+
+# standardized values
+model1.exp2.beta <- lmer(formula = scale(loglook) ~ type + (1|subj_id),
+                     data = filter(exp2.avg, subj_id != "S5_7" & subj_id != "S5_10"), REML=FALSE)
+model1.exp2.betas <- gen.beta(model1.exp2.beta)
+
+# look at contrasts within each habituation condition
+exp2.findings <- cbind(model1.exp2.table, model1.exp2.betas, model1.exp2.ci)
+```
+
+
+```{r exp12.together}
 # null model
 model0.exp12 <- lmer(formula = loglook ~ 1 + (1|subj_id) + (1|experiment),
                data = exp12.avg, REML = FALSE)
 
 model1.exp12 <- lmer(formula = loglook ~ type + (1|subj_id) + (1|experiment),
                      data = exp12.avg, REML=FALSE)
+summary(model1.exp12)
 
 # identify and check influence of observations
 plot(influence(model1.exp12, "subj_id"), which="cook",
@@ -419,29 +508,70 @@ plot(influence(model1.exp12, "subj_id"), which="cook",
      ylab="Subject ID")
 
 # 3 influential observations identified
-model1.exp12.cooks <- lmer(formula = loglook ~ type * mitten + (1|subj_id) + (1|experiment),
-                     data = filter(exp12.avg, subj_id != "S4_9" & subj_id != "S5_10" & subj_id != "S5_7"), REML=FALSE)
+model1.exp12.cooks <- lmer(formula = loglook ~ type  + (1|subj_id) + (1|experiment),
+                     data = filter(exp12.avg, subj_id != "S4_9"), REML=FALSE)
 model1.exp12.table <- gen.m(model1.exp12.cooks)
-model1.exp12.ci <- gen.ci(model1.exp12.cooks)[4:7,]
+model1.exp12.ci <- gen.ci(model1.exp12.cooks)[4:5,]
 
 # standardized values
-model1.exp12.beta <- lmer(formula = scale(loglook) ~ type * mitten + (1|subj_id) + (1|experiment),
+model1.exp12.beta <- lmer(formula = scale(loglook) ~ type + (1|subj_id) + (1|experiment),
+                     data = filter(exp12.avg, subj_id != "S4_9"), REML=FALSE)
+model1.exp12.betas <- gen.beta(model1.exp12.beta)
+
+exp12.together <- cbind(model1.exp12.table, model1.exp12.betas, model1.exp12.ci)
+```
+
+
+```{r exp12.different}
+# null model
+model0.exp12i <- lmer(formula = loglook ~ 1 + (1|subj_id) + (1|experiment),
+               data = exp12.avg, REML = FALSE)
+
+model1.exp12i <- lmer(formula = loglook ~ type * mitten + (1|subj_id) + (1|experiment),
+                     data = exp12.avg, REML=FALSE)
+summary(model1.exp12i)
+
+# identify and check influence of observations
+plot(influence(model1.exp12i, "subj_id"), which="cook",
+     cutoff=4/40, sort=TRUE,
+     xlab="Cook´s Distance",
+     ylab="Subject ID")
+
+# 3 influential observations identified
+model1.exp12i.cooks <- lmer(formula = loglook ~ type * mitten + (1|subj_id) + (1|experiment),
                      data = filter(exp12.avg, subj_id != "S4_9" & subj_id != "S5_10" & subj_id != "S5_7"), REML=FALSE)
-model1.exp12.betas <- fixef(model1.exp12.beta)
+model1.exp12i.table <- gen.m(model1.exp12i.cooks)
+model1.exp12i.ci <- gen.ci(model1.exp12i.cooks)[4:7,]
 
-# look at contrasts within each habituation condition
-contrasts.exp12 <- cbind(difflsmeans(model1.exp12.beta, test.effs="type:mitten")[[1]][,1], difflsmeans(model1.exp12.cooks, test.effs="type:mitten")[[1]])
-names(contrasts.exp12) <- c("beta", "b", "se", "df", "t", "lower", "upper", "p")
+# standardized values
+model1.exp12i.beta <- lmer(formula = scale(loglook) ~ type * mitten + (1|subj_id) + (1|experiment),
+                     data = filter(exp12.avg, subj_id != "S4_9" & subj_id != "S5_10" & subj_id != "S5_7"), REML=FALSE)
+model1.exp12i.betas <- gen.beta(model1.exp12i.beta)
+
+exp12.interaction <- cbind(model1.exp12i.table, model1.exp12i.betas, model1.exp12i.ci)
+
 ```
 
 
-```{r exp12.table}
-exp12 <- kable(cbind(model1.exp12.betas,model1.exp12.table,model1.exp12.ci), col.names = c("beta", "b", "se", "df", "t", "p", "lower", "upper"))
+```{r exp1.scs}
+exp12.scs <- lumi.wide %>% filter(experiment == "Exp.2" | experiment == "Exp.1"| experiment == "SCS.Exp.3")
+exp12.scs$experiment <- relevel(exp12.scs$experiment, ref = "SCS.Exp.3")
 
-exp12.findings <- data.frame(cbind(model1.exp12.betas,model1.exp12.table,model1.exp12.ci))
-names(exp12.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
+model1 <- lm(prop.ineff.all ~ experiment, data = exp12.scs)
+summary(model1)
+plot(allEffects(model1))
+
+# identify and check influence of observations
+meta.influence <- CookD(model1, plot=FALSE) # influential 
+meta.exclude.n <- length(which(meta.influence > 4/60)) # how many subj exceeded cutoff?
+
+model1.all.cooks <- lm(formula = prop.ineff.all ~ experiment, data = exp12.scs %>% slice(which(meta.influence < 4/264)))
+summary(model1.all.cooks)
+plot(allEffects(model1.all.cooks))
+model1.all.table <- gen.m(model1.all.cooks)
+model1.all.ci <- gen.ci(model1.all.cooks)[6:12,]
+
 ```
-
 
 ```{r exp2.scs}
 exp2.scs <- lumi.raw.avg %>% filter(experiment == "Exp.2" | experiment == "SCS.Exp.3")
@@ -582,6 +712,37 @@ In Experiment 3, infants (N=`r length(unique(exp3.avg$subj_id))`; `r length(uniq
 
 Infants responded differently to the test events across the two habituation conditions (`r report(exp3.findings, 4, 3, 2)`, 2 participants excluded on the basis of Cook’s Distance (38), mixed effects model with habituation condition and test event as a fixed interaction, participant identity as a random intercept). When the actor’s reaches were initially constrained by a barrier (H1), infants looked longer, at test, at the inefficient action than the efficient action (Mean~ineff~=`r summary.avg$look[6]`s, Mean~eff~=`r summary.avg$look[5]`s, `r report(contrasts.exp3, 2, 3, 2)`). Critically, this looking preference cannot be attributed to low-level preferences for the curvilinear reach, because infants in the unconstrained condition (H2) showed a preference for the efficient over the inefficient action (M~ineff~=`r summary.avg$look[8]`s, M~eff~=`r summary.avg$look[7]`s, `r report(contrasts.exp3, 6, 3, 2)`). See Figure 2. Experiment 1 therefore provides evidence that infants expect object-directed reaches to be efficient. 
 
+
+```{r exp3.exp1}
+exp13.avg <- lumi.raw.avg %>% filter(hab == "constrained" & experiment == "Exp.3" | experiment == "Exp.1")
+# null model
+model0.exp13 <- lmer(formula = loglook ~ 1 + (1|subj_id) + (1|experiment),
+               data = exp13.avg, REML = FALSE)
+
+model1.exp13 <- lmer(formula = loglook ~ type * experiment + (1|subj_id) + (1|experiment),
+                     data = exp13.avg, REML=FALSE)
+summary(model1.exp13)
+
+# identify and check influence of observations
+plot(influence(model1.exp13, "subj_id"), which="cook",
+     cutoff=4/40, sort=TRUE,
+     xlab="Cook´s Distance",
+     ylab="Subject ID")
+
+# 3 influential observations identified
+model1.exp13.cooks <- lmer(formula = loglook ~ type * experiment + (1|subj_id) + (1|experiment),
+                     data = filter(exp13.avg, subj_id != "S1_6" & subj_id != "S4_9"), REML=FALSE)
+model1.exp13.table <- gen.m(model1.exp13.cooks)
+model1.exp13.ci <- gen.ci(model1.exp13.cooks)[4:7,]
+
+# standardized values
+model1.exp13.beta <- lmer(formula = scale(loglook) ~ type * experiment + (1|subj_id) + (1|experiment),
+                     data = filter(exp13.avg, subj_id != "S1_6" & subj_id != "S4_9"), REML=FALSE)
+model1.exp13.betas <- gen.beta(model1.exp13.beta)
+
+exp13.interaction <- cbind(model1.exp13.table, model1.exp13.betas, model1.exp13.ci)
+
+```
 
 
 ### Experiment 4
