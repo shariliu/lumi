@@ -9,7 +9,7 @@ output:
 
 # Tables and Figures
 
-![**Figure 1.** Still frames from videos shown to participants in Experiments 1-5, including stimuli from habituation (A) and test (B). In each video, a person reached for and picked up the object (H1-H2, T1-H2), or caused a change in an object (H3-H5, T3-T4), over a barrier (H1-H3, H5) or over empty space (H4, T1-T4). The person either acted on the object by contacting it (H1-H4, T1-T3) or produced the same effect from a distance of 50 pixels, after a 0.5s delay (H5, T4), and either performed these actions while wearing a mitten (H1, H3-H5, T1, T3-T4) or with a bare hand (H2, T2) During test (B), the person either reached directly for the object on a novel but efficient trajectory (left panels), or in a curvilinear fashion on the familiar but inefficient trajectory (right panels). .](/Users/shariliu/Documents/HarvardLDS/Studies/LUMI/github/analyses/fig1.jpg)
+![**Figure 1**. Still frames from videos shown to participants in Experiments 1-5, including stimuli from habituation (A) and test (B). In each video, a person reached for and picked up the object (H1-H2, T1-H2), or caused it to illuminate (H3-H5, T3-T4), over a barrier (H1-H3, H5) or through empty space (H4, T1-T4). The person either acted on the object by contacting it (H1-H4, T1-T3) or produced the same effect from a distance of 50 pixels, after a 0.5s delay (H5, T4), and either performed these actions while wearing a mitten (H1, H3-H5, T1, T3-T4) or with a bare hand (H2, T2) During test (B), the person either reached directly for the object on a novel but efficient trajectory (left panels), or in a curvilinear fashion on the familiar but inefficient trajectory (right panels).] .](/Users/shariliu/Documents/HarvardLDS/Studies/LUMI/github/analyses/fig1.jpg)
 
 ***
 
@@ -346,11 +346,7 @@ grid.arrange(fig2.prop.full, fig2.raw.full, heights = c(0.5,0.5))
 
 ```
 
-**Figure 2.** Looking time in seconds towards the efficient versus inefficient reach (bottom), and proportion looking towards the inefficient reach (top) at test across Experiments 1-5 (N=152). Labels above each panel list the experiment name (Exp. 1-5), whether actions during habituation were constrained or unconstrained by a barrier, goal (state.change or pick.up), whether these actions involved contact with the object, whether the actor wore a mitten, and video displays listed in Figure 1. Error bars around means indicate within-subjects 95% confidence intervals (bottom) and bootstrapped 95% confidence intervals (top). Individual points (top) or pairs of connected points (bottom) indicate data from a single participant. Horizontal bars within boxes indicate medians, and boxes indicate the middle 2 quartiles of data. Violin plots (top) indicate distribution of data, area scaled proportionally to the number of observations.
-
-
-***
-
+**Figure 2.** Looking time in seconds towards the efficient versus inefficient reach at test across Experiments 1-5 (N=152). Labels above each panel list the experiment name (Exp. 1-5), whether actions during habituation were constrained or unconstrained by a barrier, goal (state change or pick up), whether these actions involved contact with the object, whether the actor wore a mitten, and video displays listed in Figure 1. Red dots and error bars indicate means and within-subjects 95% confidence intervals . Pairs of connected points indicate data from a single participant. Horizontal bars within boxes indicate medians, and boxes indicate the middle 2 quartiles of data. 
 
 
 ```{r analysis_prep}
@@ -412,12 +408,6 @@ report <- function(table, index, places, tails) {
   result <- paste("[", round(table$lower[index], places), ",", round(table$upper[index], places), "], ß=", round(table$beta[index], places), ", B=", round(table$b[index],places), ", SE=", round(table$se[index],places), " p", p, ", ", howmanytails, sep = "")
   return(result)
 }
-```
-
-
-```{r}
-plot <- ggplot(lumi.raw.tp %>% filter(testpair == "first" & experiment == "Exp.1" & hab == "constrained"), aes(testtype, look)) 
-plot + geom_boxplot() + facet_wrap(~first.test)
 ```
 
 
