@@ -1,6 +1,6 @@
 
 ---
-title: "POrigins of the concepts cause, cost, and goal in prereaching infants"
+title: "Origins of the concepts cause, cost, and goal in prereaching infants"
 author: "Shari Liu"
 date: "Dec 10, 2018"
 output:
@@ -9,7 +9,7 @@ output:
 
 # Tables and Figures
 
-![**Figure 1**. Still frames from videos shown to participants in Experiments 1-5, including stimuli from habituation (A) and test (B). In each video, a person reached for and picked up the object (H1-H2, T1-H2), or caused it to illuminate (H3-H5, T3-T4), over a barrier (H1-H3, H5) or through empty space (H4, T1-T4). The person either acted on the object by contacting it (H1-H4, T1-T3) or produced the same effect from a distance of 50 pixels, after a 0.5s delay (H5, T4), and either performed these actions while wearing a mitten (H1, H3-H5, T1, T3-T4) or with a bare hand (H2, T2) During test (B), the person either reached directly for the object on a novel but efficient trajectory (left panels), or in a curvilinear fashion on the familiar but inefficient trajectory (right panels).] .](/Users/shariliu/Documents/HarvardLDS/Studies/LUMI/github/analyses/fig1.jpg)
+![**Figure 1**. Still frames from videos shown to participants in Experiments 1-5, including stimuli from habituation (A) and test (B). In each video, a person reached for and picked up the object (H1-H2, T1-H2), or caused it to illuminate (H3-H5, T3-T4), over a barrier (H1-H3, H5) or empty space (H4, T1-T4). The person either acted on the object by contacting it (H1-H4, T1-T3) or produced the same effect from a distance of 50 pixels, after a 0.5s delay (H5, T4), and either performed these actions while wearing a glove (H1, H3-H5, T1, T3-T4) or with a bare hand (H2, T2) During test (B), the person either reached directly for the object on a novel but efficient trajectory (left panels), or in a curvilinear fashion on the familiar but inefficient trajectory (right panels). Clocks indicate temporal delays, black line segments indicate spatial gaps, and black line segments around the object indicate frames in which it illuminated. *indicates direct replication (Experiment 5) .](/Users/shariliu/Documents/HarvardLDS/Studies/LUMI/github/analyses/fig1_final.pdf)
 
 ***
 
@@ -36,15 +36,20 @@ ipak(packages)
 
 ```{r import}
 
-lumi.wide <- read.csv("/Users/shariliu/Documents/HarvardLDS/Studies/LUMI/github/analyses/lumi_data_deid.csv", header = TRUE) # change to your local directory
-lumi.rel <- read.csv("/Users/shariliu/Documents/HarvardLDS/Studies/LUMI/github/analyses/lumi_reliability.csv", header=TRUE)
+lumi.wide <- read.csv("/Users/shariliu/Documents/HarvardLDS/Studies/LUMI/github/analyses/lumi_data_deid.csv", header = TRUE) %>% 
+  mutate(clarity = case_when(
+                          hand == "mitten" ~ 0,
+                          hand == "glove" ~ 1,
+                          hand == "bare" ~ 2,
+                      ))# change to your local directory
+lumi.rel <- read.csv("/Users/shariliu/Documents/HarvardLDS/Studies/LUMI/github/analyses/lumi_reliability.csv", header=TRUE) 
 
 str(lumi.wide)
 ```
 
 ```{r prep_data}
 # convert to long format
-lumi.long <- gather(lumi.wide, type, look, ineff.1:avg.eff)
+lumi.long <- gather(lumi.wide, type, look, ineff.1:avg.eff) 
 str(lumi.long)
 lumi.long$type <- factor(lumi.long$type)
 lumi.long$loglook <- log(lumi.long$look)
@@ -88,7 +93,6 @@ lumi.long$testpair <- relevel(lumi.long$testpair, ref = "first")
 lumi.wide$first.test <- relevel(lumi.wide$first.test, ref = "efficient")
 lumi.wide$goal <- relevel(lumi.wide$goal, ref = "pick.up")
 lumi.wide$hab <- relevel(lumi.wide$hab, ref = "unconstrained")
-lumi.wide$mitten <- relevel(lumi.wide$mitten, ref = "no")
 lumi.wide$training <- relevel(lumi.wide$training, ref = "no.training")
 lumi.wide$causal <- relevel(lumi.wide$causal, ref = "no")
 lumi.wide$sex <- relevel(lumi.wide$sex, ref = "m")
@@ -245,11 +249,11 @@ summarySEwithin <- function(data=NULL, measurevar, betweenvars=NULL, withinvars=
 
 
 ## get within-subjects CIs for plotting
-summary.avg <- summarySEwithin(data = dplyr::filter(lumi.raw.avg), measurevar = "look", betweenvars = c("experiment", "training", "hab","goal","mitten","causal", "paper", "stimuli"), withinvars = "type",
+summary.avg <- summarySEwithin(data = dplyr::filter(lumi.raw.avg), measurevar = "look", betweenvars = c("experiment", "training", "hab","goal","hand","causal", "paper", "stimuli"), withinvars = "type",
                                   idvar = "subj_id")
 kable(summary.avg, caption = "Summary of Avg Looks to Eff and Ineff Actions")
 
-prop.tp <- summarySEwithin(data = dplyr::filter(lumi.prop.tp), measurevar = "look", betweenvars = c("experiment", "training", "hab","goal","mitten","causal", "paper"), withinvars = "testpair",
+prop.tp <- summarySEwithin(data = dplyr::filter(lumi.prop.tp), measurevar = "look", betweenvars = c("experiment", "training", "hab","goal","hand","causal", "paper"), withinvars = "testpair",
                                    idvar = "subj_id")
 prop.tp
 
@@ -257,7 +261,7 @@ prop.tp
 ```
 
 
-```{r figsingle}
+```{r figsingle, eval=FALSE, include=FALSE}
 fig2.single <- ggplot(data = dplyr::filter(lumi.raw.avg, experiment == "SCS.Exp.1"), aes(type, look, fill=type))
 fig2.single +
   # geom_boxplot(outlier.colour = NA, alpha = .8)+
@@ -269,7 +273,7 @@ fig2.single +
   # geom_point(alpha = 0.5)+
   # geom_line(alpha = 0.5, aes(group = subj_id))+
   geom_errorbar(data = filter(summary.avg, experiment == "SCS.Exp.1"), size = 1, width = 0, colour = "red", aes(ymin=look-ci, ymax=look+ci)) +
-  facet_grid(~experiment+goal+hab+causal+mitten)+
+  facet_grid(~experiment+goal+hab+causal+hand)+
   scale_x_discrete(labels = c("inefficient","efficient"))+
   theme_bw(14)+
   scale_fill_brewer(palette="Greys")+
@@ -278,7 +282,7 @@ fig2.single +
 ```
 
 
-```{r fig2a, fig.width = 20, include=TRUE}
+```{r fig2a, eval=FALSE, include=FALSE}
 
 
 # avg looks to eff and ineff, grouped by experiment, with full variable info 
@@ -295,7 +299,7 @@ fig2.raw.LBS +
   geom_errorbar(data = filter(summary.avg, paper == "LBS"), size = 1, width = 0, colour = "red", aes(ymin=look-ci, ymax=look+ci)) +
   scale_x_discrete(labels = c("efficient","inefficient"))+
   theme_bw(14)+
-  facet_grid(~experiment+goal+hab+causal+mitten+stimuli)+
+  facet_grid(~experiment+goal+hab+causal+hand+stimuli)+
   scale_fill_brewer(palette="Greys")+
   theme(legend.position="none")
 
@@ -304,176 +308,53 @@ grid.text("Experiment", x = 0.08, y = 0.95)
 grid.text("Goal", x = 0.08, y = 0.90)
 grid.text("Action relative to barrier", x = 0.08, y = 0.85)
 grid.text("Action on contact", x = 0.08, y = 0.80)
-grid.text("Actor wearing mitten", x = 0.08, y = 0.75)
+grid.text("Hand", x = 0.08, y = 0.75)
 grid.text("Displays", x = 0.08, y = 0.70)
 ```
 
 
-```{r fig2cow, fig.width = 20, include=TRUE}
-
-
-# avg looks to eff and ineff, grouped by experiment, with full variable info 
-fig2.exp1 <- ggplot(data = dplyr::filter(lumi.raw.avg, experiment=="Exp.1"), aes(type, look)) +
-  geom_boxplot(outlier.colour = NA, alpha = .8)+
-  stat_summary(fun.y = mean, geom = "point", shape=21, size=3, position = "dodge", colour = "red", fill = "red") +
-  ylab("Looking Time (s)") +
-  xlab("Test Event")+
-  coord_cartesian(ylim = c(0, 45)) +
-  geom_point(alpha = 0.1)+
-  geom_line(alpha = 0.1, aes(group = subj_id))+
-  geom_errorbar(data = filter(summary.avg, paper == "LBS" & experiment=="Exp.1"), size = 1, width = 0, colour = "red", aes(ymin=look-ci, ymax=look+ci)) +
-  scale_x_discrete(labels = c("efficient","inefficient"))+
-  # theme_bw(14)+
-  facet_grid(~experiment+goal+hab+causal+mitten+stimuli)+
-  scale_fill_brewer(palette="Greys")+
-  theme(legend.position="none")
-
-fig2.exp2 <- ggplot(data = dplyr::filter(lumi.raw.avg, experiment=="Exp.2"), aes(type, look)) +
-  geom_boxplot(outlier.colour = NA, alpha = .8)+
-  stat_summary(fun.y = mean, geom = "point", shape=21, size=3, position = "dodge", colour = "red", fill = "red") +
-  ylab("Looking Time (s)") +
-  xlab("Test Event")+
-  coord_cartesian(ylim = c(0, 45)) +
-  geom_point(alpha = 0.1)+
-  geom_line(alpha = 0.1, aes(group = subj_id))+
-  geom_errorbar(data = filter(summary.avg, paper == "LBS" & experiment=="Exp.2"), size = 1, width = 0, colour = "red", aes(ymin=look-ci, ymax=look+ci)) +
-  scale_x_discrete(labels = c("efficient","inefficient"))+
-  # theme_bw(14)+
-  facet_grid(~experiment+goal+hab+causal+mitten+stimuli)+
-  scale_fill_brewer(palette="Greys")+
-  theme(legend.position="none")
+```{r fig2cow, feval=FALSE, include=FALSE}
 
 fig2.exp12 <- ggplot(data = dplyr::filter(lumi.raw.avg, paper=="LBS" & goal=="pick.up"), aes(type, look, fill=type)) +
   geom_boxplot(outlier.colour = NA, alpha = .8)+
   stat_summary(fun.y = mean, geom = "point", shape=21, size=3, position = "dodge", colour = "red", fill = "red") +
   ylab("Looking Time (s)") +
   xlab("Test Event")+
-  coord_cartesian(ylim = c(0, 45)) +
+  coord_cartesian(ylim = c(-5, 60)) +
   geom_point(alpha = 0.1)+
   geom_line(alpha = 0.1, aes(group = subj_id))+
   geom_errorbar(data = filter(summary.avg, paper == "LBS" & goal=="pick.up"), size = 1, width = 0, colour = "red", aes(ymin=look-ci, ymax=look+ci)) +
   scale_x_discrete(labels = c("efficient","inefficient"))+
   # theme_bw(14)+
-  facet_grid(~experiment+goal+hab+causal+mitten+stimuli)+
+  facet_grid(~experiment+goal+hab+causal+hand+stimuli)+
   scale_fill_brewer(palette="Greys")+
   theme(legend.position="none",
         strip.background = element_blank(),
   strip.text.x = element_blank())
-
-fig2.exp3 <- ggplot(data = dplyr::filter(lumi.raw.avg, experiment=="Exp.3"), aes(type, look)) +
-  geom_boxplot(outlier.colour = NA, alpha = .8)+
-  stat_summary(fun.y = mean, geom = "point", shape=21, size=3, position = "dodge", colour = "red", fill = "red") +
-  ylab("Looking Time (s)") +
-  xlab("Test Event")+
-  coord_cartesian(ylim = c(0, 45)) +
-  geom_point(alpha = 0.1)+
-  geom_line(alpha = 0.1, aes(group = subj_id))+
-  geom_errorbar(data = filter(summary.avg, paper == "LBS" & experiment=="Exp.3"), size = 1, width = 0, colour = "red", aes(ymin=look-ci, ymax=look+ci)) +
-  scale_x_discrete(labels = c("efficient","inefficient"))+
-  # theme_bw(14)+
-  facet_grid(~experiment+goal+hab+causal+mitten+stimuli)+
-  scale_fill_brewer(palette="Greys")+
-  theme(legend.position="none")
-
-fig2.exp4 <- ggplot(data = dplyr::filter(lumi.raw.avg, experiment=="Exp.4"), aes(type, look)) +
-  geom_boxplot(outlier.colour = NA, alpha = .8)+
-  stat_summary(fun.y = mean, geom = "point", shape=21, size=3, position = "dodge", colour = "red", fill = "red") +
-  ylab("Looking Time (s)") +
-  xlab("Test Event")+
-  coord_cartesian(ylim = c(0, 45)) +
-  geom_point(alpha = 0.1)+
-  geom_line(alpha = 0.1, aes(group = subj_id))+
-  geom_errorbar(data = filter(summary.avg, paper == "LBS" & experiment=="Exp.4"), size = 1, width = 0, colour = "red", aes(ymin=look-ci, ymax=look+ci)) +
-  scale_x_discrete(labels = c("efficient","inefficient"))+
-  # theme_bw(14)+
-  facet_grid(~experiment+goal+hab+causal+mitten+stimuli)+
-  scale_fill_brewer(palette="Greys")+
-  theme(legend.position="none")
-
-fig2.exp5 <- ggplot(data = dplyr::filter(lumi.raw.avg, experiment=="Exp.5"), aes(type, look)) +
-  geom_boxplot(outlier.colour = NA, alpha = .8)+
-  stat_summary(fun.y = mean, geom = "point", shape=21, size=3, position = "dodge", colour = "red", fill = "red") +
-  ylab("Looking Time (s)") +
-  xlab("Test Event")+
-  coord_cartesian(ylim = c(0, 45)) +
-  geom_point(alpha = 0.1)+
-  geom_line(alpha = 0.1, aes(group = subj_id))+
-  geom_errorbar(data = filter(summary.avg, paper == "LBS" & experiment=="Exp.5"), size = 1, width = 0, colour = "red", aes(ymin=look-ci, ymax=look+ci)) +
-  scale_x_discrete(labels = c("efficient","inefficient"))+
-  # theme_bw(14)+
-  facet_grid(~experiment+goal+hab+causal+mitten+stimuli)+
-  scale_fill_brewer(palette="Greys")+
-  theme(legend.position="none")
-
 
 fig2.exp345 <- ggplot(data = dplyr::filter(lumi.raw.avg, goal=="state.change"), aes(type, look, fill=type)) +
   geom_boxplot(outlier.colour = NA, alpha = .8)+
   stat_summary(fun.y = mean, geom = "point", shape=21, size=3, position = "dodge", colour = "red", fill = "red") +
   ylab("Looking Time (s)") +
   xlab("Test Event")+
-  coord_cartesian(ylim = c(0, 45)) +
+  coord_cartesian(ylim = c(-5, 60)) +
   geom_point(alpha = 0.1)+
   geom_line(alpha = 0.1, aes(group = subj_id))+
   geom_errorbar(data = filter(summary.avg, goal=="state.change"), size = 1, width = 0, colour = "red", aes(ymin=look-ci, ymax=look+ci)) +
   scale_x_discrete(labels = c("efficient","inefficient"))+
   # theme_bw(14)+
-  facet_grid(~experiment+goal+hab+causal+mitten+stimuli)+
+  facet_grid(~experiment+goal+hab+causal+hand+stimuli)+
   scale_fill_brewer(palette="Greys")+
   theme(legend.position="none", 
         strip.background = element_blank(),
   strip.text.x = element_blank())
 
-plot_grid(fig2.exp1, fig2.exp2, fig2.exp3, fig2.exp4, fig2.exp5, labels = c("A", "B", "C", "D", "E"))
-
 theme_set(theme_cowplot(font_size=20))
 plot_grid(fig2.exp12, fig2.exp345, labels = c("A", "B"), nrow=1, rel_widths=c(1,2.2))
-
-
 ```
 
-```{r fig2b, fig.width = 20, fig.height=11, include=TRUE}
-# prop looks ineff, grouped by experiment, with full variable info 
-fig2.prop <- ggplot(data = dplyr::filter(lumi.prop.avg), aes(testtype, look, fill=experiment))
-fig2.prop.LBS <- ggplot(data = dplyr::filter(lumi.prop.avg, paper == "LBS"), aes(testtype, look, fill=experiment))
-fig2.prop.full <- fig2.prop.LBS + 
-  geom_boxplot(alpha = 0.8)+
-  geom_violin(fill = NA, width = 0.5)+
-  stat_summary(fun.y = mean, geom = "point", shape =21, size=3, position = "dodge", colour = "red", fill = "red") +
-  ylab("\n \n \n \n \n \n Proportion Looking \n to Inefficient") +
-  xlab(element_blank())+
-  geom_jitter(width = .05, alpha = 0.2)+
-  coord_cartesian(ylim = c(0.2,0.8)) +
-  stat_summary(fun.data = mean_cl_boot, geom = "errorbar", colour="red", position = position_dodge(width = 5), width = 0, size = 1) +
-  geom_hline(yintercept=0.5, alpha=0.4)+
-  facet_grid(~experiment+goal+hab+causal+mitten+stimuli)+
-  theme_bw(14)+
-  scale_fill_brewer(palette="Greys")+
-  theme(strip.placement = "outside") +
-  theme(legend.position="none", axis.text.x = element_blank(), axis.title.x=element_blank())
 
-# add annotations
-
-# grid.arrange(fig2.prop.full, fig2.raw.full, heights = c(0.5,0.5))
-
-# grid.text("Experiment", x = 0.05, y = 0.978)
-# grid.text("Training", x = 0.05, y = .95)
-# grid.text("Goal", x = 0.05, y = 0.89)
-# grid.text("Habituation", x = 0.05, y = .92)
-# grid.text("Causal", x = 0.05, y = 0.861)
-# grid.text("Mitten", x = 0.05, y = 0.832)
-# grid.text("Stimuli", x = 0.05, y = 0.805)
-
-# grid.text("Experiment", x = 0.1, y = 0.97)
-# grid.text("Goal", x = 0.1, y = 0.94)
-# grid.text("Action relative to barrier", x = 0.1, y = 0.91)
-# grid.text("Action on contact", x = 0.1, y = 0.88)
-# grid.text("Actor wearing mitten", x = 0.1, y = 0.85)
-# grid.text("Displays", x = 0.1, y = 0.82)
-
-```
-
-**Figure 2.** Looking time in seconds towards the efficient versus inefficient reach at test across Experiments 1-5 (N=152). Labels above each panel list the experiment name (Exp. 1-5), whether actions during habituation were constrained or unconstrained by a barrier, goal (state change or pick up), whether these actions involved contact with the object, whether the actor wore a mitten, and video displays listed in Figure 1. Red dots and error bars indicate means and within-subjects 95% confidence intervals . Pairs of connected points indicate data from a single participant. Horizontal bars within boxes indicate medians, and boxes indicate the middle 2 quartiles of data. 
-
+![**Figure 2.** Looking time in seconds towards the efficient versus inefficient reach at test across Experiments 1-5 (N=152), for both (A) pickup events (Experiments 1-2) and (B) state change events (Experiments 3-5). Images indicate video displays used during the habituation phase (above each graph) and test phase (below each graph) for each experiment. Red dots and error bars indicate means and within-subjects 95% confidence intervals. Pairs of connected points indicate data from a single participant. Horizontal bars within boxes indicate medians, and boxes indicate the middle 2 quartiles of data. Upper whiskers indicate data up to 1.5 times the interquartile range above the third quartile, and lower whiskers indicate data up to 1.5 times the interquartile range below the first quartile. Beta coefficients (ß) list effect sizes in standard deviation units for each condition. * < .05, **<.01, ***<.001, two-tailed, except for the causal condition in Experiment 5, which was pre-registered as a one-tailed test.](/Users/shariliu/Documents/HarvardLDS/Studies/LUMI/github/analyses/fig2_final.pdf)
 
 ```{r analysis_prep}
 exp1.avg <-dplyr::filter(lumi.raw.avg, experiment == "Exp.1")
@@ -544,7 +425,6 @@ report <- function(table, index, places, tails, flip) {
 # Results (Main Text)
 
 ## Prereaching infants’ understanding of reaching actions that lift objects
-
 ### Experiments 1 and 2
 ```{r exp1}
 # participant info
@@ -560,10 +440,10 @@ model1.exp1 <- lmer(formula = loglook ~ type + (1|subj_id),
 summary(model1.exp1)
 
 # identify and check influence of observations
-plot(influence(model1.exp1, "subj_id"), which="cook",
-     cutoff=4/20, sort=TRUE,
-     xlab="Cook´s Distance",
-     ylab="Subject ID")
+# plot(influence(model1.exp1, "subj_id"), which="cook",
+#      cutoff=4/20, sort=TRUE,
+#      xlab="Cook´s Distance",
+#      ylab="Subject ID")
 
 # 1 influential observation identified
 model1.exp1.cooks <- lmer(formula = loglook ~ type + (1|subj_id),
@@ -594,7 +474,6 @@ model1.exp1.betas2 <- gen.beta(model1.exp1.beta2)
 exp1.findings.everyone <- cbind(model1.exp1.table2, model1.exp1.betas2, model1.exp1.ci2)
 ```
 
-
 ```{r exp2}
 # null model
 model0.exp2 <- lmer(formula = loglook ~ 1 + (1|subj_id),
@@ -605,12 +484,12 @@ model1.exp2 <- lmer(formula = loglook ~ type + (1|subj_id),
 summary(model1.exp2)
 
 # identify and check influence of observations
-plot(influence(model1.exp2, "subj_id"), which="cook",
-     cutoff=4/20, sort=TRUE,
-     xlab="Cook´s Distance",
-     ylab="Subject ID")
+# plot(influence(model1.exp2, "subj_id"), which="cook",
+#      cutoff=4/20, sort=TRUE,
+#      xlab="Cook´s Distance",
+#      ylab="Subject ID")
 
-# 3 influential observations identified
+# 2 influential observations identified
 model1.exp2.cooks <- lmer(formula = loglook ~ type + (1|subj_id),
                      data = filter(exp2.avg, subj_id != "S5_7" & subj_id != "S5_10"), REML=FALSE)
 model1.exp2.table <- gen.m(model1.exp2.cooks)
@@ -638,7 +517,6 @@ model1.exp2.betas2 <- gen.beta(model1.exp2.beta2)
 exp2.findings.everyone <- cbind(model1.exp2.table2, model1.exp2.betas2, model1.exp2.ci2)
 ```
 
-
 ```{r exp12.together}
 # null model
 model0.exp12 <- lmer(formula = loglook ~ 1 + (1|subj_id) + (1|experiment),
@@ -649,12 +527,12 @@ model1.exp12 <- lmer(formula = loglook ~ type + (1|subj_id) + (1|experiment),
 summary(model1.exp12)
 
 # identify and check influence of observations
-plot(influence(model1.exp12, "subj_id"), which="cook",
-     cutoff=4/40, sort=TRUE,
-     xlab="Cook´s Distance",
-     ylab="Subject ID")
+# plot(influence(model1.exp12, "subj_id"), which="cook",
+#      cutoff=4/40, sort=TRUE,
+#      xlab="Cook´s Distance",
+#      ylab="Subject ID")
 
-# 3 influential observations identified
+# 1 influential participant identified
 model1.exp12.cooks <- lmer(formula = loglook ~ type  + (1|subj_id) + (1|experiment),
                      data = filter(exp12.avg, subj_id != "S4_9"), REML=FALSE)
 model1.exp12.table <- gen.m(model1.exp12.cooks)
@@ -668,33 +546,68 @@ model1.exp12.betas <- gen.beta(model1.exp12.beta)
 exp12.together <- cbind(model1.exp12.table, model1.exp12.betas, model1.exp12.ci)
 ```
 
+```{r exp12.together.everyone}
+
+model1.exp12 <- lmer(formula = loglook ~ type + (1|subj_id) + (1|experiment),
+                     data = exp12.avg, REML=FALSE)
+summary(model1.exp12)
+
+model1.exp12.table2 <- gen.m(model1.exp12)
+model1.exp12.ci2 <- gen.ci(model1.exp12)[4:5,]
+
+# standardized values
+model1.exp12.beta2 <- lmer(formula = scale(loglook) ~ type + (1|subj_id) + (1|experiment),
+                     data = exp12.avg, REML=FALSE)
+model1.exp12.betas2 <- gen.beta(model1.exp12.beta2)
+
+exp12.together.everyone <- cbind(model1.exp12.table2, model1.exp12.betas2, model1.exp12.ci2)
+```
+
 ```{r exp12.different}
 # null model
 model0.exp12i <- lmer(formula = loglook ~ 1 + (1|subj_id) + (1|experiment),
                data = exp12.avg, REML = FALSE)
 
-model1.exp12i <- lmer(formula = loglook ~ type * mitten + (1|subj_id) + (1|experiment),
+model1.exp12i <- lmer(formula = loglook ~ type * hand + (1|subj_id) + (1|experiment),
                      data = exp12.avg, REML=FALSE)
 summary(model1.exp12i)
 
 # identify and check influence of observations
-plot(influence(model1.exp12i, "subj_id"), which="cook",
-     cutoff=4/40, sort=TRUE,
-     xlab="Cook´s Distance",
-     ylab="Subject ID")
+# plot(influence(model1.exp12i, "subj_id"), which="cook",
+#      cutoff=4/40, sort=TRUE,
+#      xlab="Cook´s Distance",
+#      ylab="Subject ID")
 
-# 3 influential observations identified
-model1.exp12i.cooks <- lmer(formula = loglook ~ type * mitten + (1|subj_id) + (1|experiment),
+# 3 influential participants identified
+model1.exp12i.cooks <- lmer(formula = loglook ~ type * hand + (1|subj_id) + (1|experiment),
                      data = filter(exp12.avg, subj_id != "S4_9" & subj_id != "S5_10" & subj_id != "S5_7"), REML=FALSE)
 model1.exp12i.table <- gen.m(model1.exp12i.cooks)
 model1.exp12i.ci <- gen.ci(model1.exp12i.cooks)[4:7,]
 
 # standardized values
-model1.exp12i.beta <- lmer(formula = scale(loglook) ~ type * mitten + (1|subj_id) + (1|experiment),
+model1.exp12i.beta <- lmer(formula = scale(loglook) ~ type * hand + (1|subj_id) + (1|experiment),
                      data = filter(exp12.avg, subj_id != "S4_9" & subj_id != "S5_10" & subj_id != "S5_7"), REML=FALSE)
 model1.exp12i.betas <- gen.beta(model1.exp12i.beta)
 
 exp12.interaction <- cbind(model1.exp12i.table, model1.exp12i.betas, model1.exp12i.ci)
+
+```
+
+```{r exp12.different.everyone}
+
+model1.exp12i <- lmer(formula = loglook ~ type * hand + (1|subj_id) + (1|experiment),
+                     data = exp12.avg, REML=FALSE)
+summary(model1.exp12i)
+
+model1.exp12i.table2 <- gen.m(model1.exp12i)
+model1.exp12i.ci2 <- confint.merMod(model1.exp12i, method="Wald")[4:7,]
+colnames(model1.exp12i.ci2) <- c("lower", "upper")
+# standardized values
+model1.exp12i.beta2 <- lmer(formula = scale(loglook) ~ type * hand + (1|subj_id) + (1|experiment),
+                     data = filter(exp12.avg), REML=FALSE)
+model1.exp12i.betas2 <- gen.beta(model1.exp12i.beta2)
+
+exp12.interaction.everyone <- cbind(model1.exp12i.table2, model1.exp12i.betas2, model1.exp12i.ci2)
 
 ```
 
@@ -705,29 +618,44 @@ exp2.scs <- lumi.raw.avg %>% filter(experiment == "Exp.2" | experiment == "SCS.E
 model0.exp2.scs <- lmer(formula = loglook ~ 1 + (1|subj_id) + (1|experiment),
                data = exp2.scs, REML = FALSE)
 
-model1.exp2.scs <- lmer(formula = loglook ~ type * mitten + (1|subj_id) + (1|experiment),
+model1.exp2.scs <- lmer(formula = loglook ~ type * hand + (1|subj_id) + (1|experiment),
                      data = exp2.scs, REML=FALSE)
+summary(model1.exp2.scs)
 
 # identify and check influence of observations
-plot(influence(model1.exp2.scs, "subj_id"), which="cook",
-     cutoff=4/40, sort=TRUE,
-     xlab="Cook´s Distance",
-     ylab="Subject ID")
+# plot(influence(model1.exp2.scs, "subj_id"), which="cook",
+#      cutoff=4/40, sort=TRUE,
+#      xlab="Cook´s Distance",
+#      ylab="Subject ID")
 # one identified
 
-model1.exp2.scs.cooks <- lmer(formula = loglook ~ type * mitten + (1|subj_id) + (1|experiment),
+model1.exp2.scs.cooks <- lmer(formula = loglook ~ type * hand + (1|subj_id) + (1|experiment),
                      data = filter(exp2.scs, subj_id != "SCS_S3_12"), REML=FALSE)
 model1.exp2.scs.table <- gen.m(model1.exp2.scs.cooks)
 model1.exp2.scs.ci <- gen.ci(model1.exp2.scs.cooks)[4:7,]
 
 # standardized values
-model1.exp2.scs.beta <- lmer(formula = scale(loglook) ~ type * mitten + (1|subj_id) + (1|experiment),
+model1.exp2.scs.beta <- lmer(formula = scale(loglook) ~ type * hand + (1|subj_id) + (1|experiment),
                      data = filter(exp2.scs, subj_id != "SCS_S3_12"), REML=FALSE)
 model1.exp2.scs.betas <- fixef(model1.exp2.scs.beta)
              
 # look at contrasts within each caual condition
-contrasts.exp2.scs <- cbind(difflsmeans(model1.exp2.scs.beta, test.effs="type:mitten")$Estimate, difflsmeans(model1.exp2.scs.cooks, test.effs="type:mitten"))
+contrasts.exp2.scs <- cbind(difflsmeans(model1.exp2.scs.beta, test.effs="type:hand")$Estimate, difflsmeans(model1.exp2.scs.cooks, test.effs="type:hand"))
 names(contrasts.exp2.scs) <- c("beta", "term", "levels", "b", "se", "df", "t", "lower", "upper", "p")
+```
+
+```{r exp2.scs.everyone}
+model1.exp2.scs <- lmer(formula = loglook ~ type * hand + (1|subj_id) + (1|experiment),
+                     data = exp2.scs, REML=FALSE)
+
+model1.exp2.scs.table2 <- gen.m(model1.exp2.scs)
+model1.exp2.scs.ci2 <- gen.ci(model1.exp2.scs)[4:7,]
+
+# standardized values
+model1.exp2.scs.beta2 <- lmer(formula = scale(loglook) ~ type * hand + (1|subj_id) + (1|experiment),data = filter(exp2.scs), REML=FALSE)
+model1.exp2.scs.betas2 <- gen.beta(model1.exp2.scs.beta2)
+             
+exp2.scs.everyone <- cbind(model1.exp2.scs.table2,model1.exp2.scs.ci2,model1.exp2.scs.betas2)
 ```
 
 ```{r exp2.scs.table}
@@ -746,12 +674,12 @@ model0.exp1.scs <- lmer(formula = loglook ~ 1 + (1|subj_id) + (1|experiment),
 
 model1.exp1.scs <- lmer(formula = loglook ~ type * experiment + (1|subj_id) + (1|experiment),
                      data = exp1.scs, REML=FALSE)
-
+summary(model1.exp1.scs)
 # identify and check influence of observations
-plot(influence(model1.exp1.scs, "subj_id"), which="cook",
-     cutoff=4/40, sort=TRUE,
-     xlab="Cook´s Distance",
-     ylab="Subject ID")
+# plot(influence(model1.exp1.scs, "subj_id"), which="cook",
+#      cutoff=4/40, sort=TRUE,
+#      xlab="Cook´s Distance",
+#      ylab="Subject ID")
 # 2 subjects identified
 
 model1.exp1.scs.cooks <- lmer(formula = loglook ~ type * experiment + (1|subj_id) + (1|experiment),
@@ -772,8 +700,6 @@ names(contrasts.exp1.scs) <- c("beta", "term", "levels", "b", "se", "df", "t", "
 ```
 
 ```{r exp1.scs.table}
-exp1.scs <- kable(cbind(model1.exp1.scs.betas,model1.exp1.scs.table,model1.exp1.scs.ci), col.names = c("beta", "b", "se", "df", "t", "p", "lower", "upper"))
-
 exp1.scs.findings <- data.frame(cbind(model1.exp1.scs.betas,model1.exp1.scs.table,model1.exp1.scs.ci))
 names(exp1.scs.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
 ```
@@ -783,15 +709,73 @@ exp12.describe <- summarySEwithin(data = dplyr::filter(lumi.raw.avg, experiment 
                                   idvar = "subj_id")
 ```
 
-In Experiment 1, we tested for infants’ sensitivity to action efficiency using events based directly on past research, featuring reaches with mittens (28) (Figure 1). Three-month-old infants (N=`r length(unique(exp1.avg$subj_id))`; Mean age=`r round(exp1.info$mean,0)` days; range=`r exp1.info$min`-`r exp1.info$max`, `r exp1.info$f` female) viewed video clips of an actor who reached over a barrier, grasped and lifted a ball, and moved the ball to her side of the barrier (Figure 1, H1). The height of this barrier varied across trials, and the person always adapted her reach to the barrier. After infants habituated to these events (i.e. their attention declined by 50%), or after 12 trials, whichever came first, we measured their attention to alternating test events in which the person reached for the same ball as during habituation, but with no obstacles in her way (Figure 1, T1). On alternating test trials, she reached on the same curvilinear path towards the ball (a familiar but newly inefficient action) or on a direct path (a novel but newly efficient action). The only minor differences between these events and the events from past studies (28) were that the actor in this study wore a tight-fitting white glove, instead of a brown mitten, and she kept her hand in the same grasping position during the entire reach, instead of turning the ball over in the mitten after retrieving it. 
+```{r exp1.scs.everyone}
 
-Across all experiments, we calculated the average looking time towards the efficient versus inefficient reach over 3 pairs of test events. Infant looking times are often log-normally distributed (46), including in this dataset (see Figure S3) and thus were log-transformed (main results) or transformed to proportions (meta-analytic results, see SI) prior to analysis. All models including repeated measures included a random intercept for participants, and all models across multiple studies included a random intercept for experiment.
 
-In light of past findings that prereaching infants fail to expect reaching actions by a mittened person to be efficient, we expected them to look equally at the two test events.  Consistent with this prediction, infants looked equally to the inefficient and the efficient reach of the gloved hand (M~ineff~=`r summary.avg$look[2]`s, M~eff~=`r summary.avg$look[1]`s, `r report(exp1.findings, 2, 3, 2)`, excluding one influential participant on the basis of Cook’s Distance (47)). See Figure 2. Nevertheless, looking preferences in this experiment differed marginally from those in the experiment on which this study was based (28), (`r report(exp1.scs.findings,4,3,2,flip)`, excluding two influential participants), possibly because of the use of gloves rather than mittens, in a posture that better revealed the contact relation between the hand and object. 
+model1.exp1.scs <- lmer(formula = loglook ~ type * experiment + (1|subj_id) + (1|experiment),
+                     data = exp1.scs, REML=FALSE)
 
-Accordingly, in Experiment 2, infants (N=`r length(unique(exp2.avg$subj_id))`; Mean age=`r round(exp2.info$mean,0)` days; range=`r exp2.info$min`-`r exp2.info$max`; `r exp2.info$f` female) were presented with the same actions from Experiment 1, except that they were performed by an actor who wore no gloves, further clarifying the contact relation between the hand and object.  Infants looked longer at the inefficient than the efficient reach of the bare hand in (M~ineff~=`r summary.avg$look[4]`s, M~eff~=`r summary.avg$look[3]`s, `r report(exp2.findings, 2, 3, 2)`, excluding 2 influential participants). This finding suggests that infants indeed expect reaching actions to be efficient in the familiar context of a bare-handed reach. Performance in Experiment 2 differed significantly from performance in the original study on which it was based (28) (`r report(exp2.scs.findings,4,3,2,flip)`, excluding 1 influential participant). However, performance in Experiments 1 and 2 did not differ from each other (`r report(exp12.interaction,4,3,2, flip)`, excluding 3 influential participants). Collapsing across both Experiments 1 and 2, infants looked marginally longer at the inefficient than the efficient action (M~ineff~=`r exp12.describe$look[2]`s, M~eff~=`r exp12.describe$look[1]`s, `r report(exp12.together,2,3,2)`, excluding one influential participant) (Figure 2). These experiments, together with past research (27, 28), suggest that untrained 3-month-old infants have weak expectations about the efficiency of reaching and grasping actions. Our findings also hint that presenting infants with hands covered in mittens may impair their ability to interpret the agent’s action, in accord with studies conducted in older infants (48). 
+model1.exp1.scs.table2 <- gen.m(model1.exp1.scs) 
+model1.exp1.scs.ci2 <-  confint.merMod(model1.exp1.scs,method= "Wald")[4:7,]
+colnames(model1.exp1.scs.ci2) <- c("lower", "upper")
+# standardized values
+model1.exp1.scs.beta2 <- lmer(formula = scale(loglook) ~ type * experiment + (1|subj_id) + (1|experiment), data = exp1.scs ,REML=FALSE)
+model1.exp1.scs.betas2 <- gen.beta(model1.exp1.scs.beta2)
 
-Overall, Experiments 1 and 2 confirm past observations that young infants do not robustly represent acts of picking up and entraining an object as goal-directed and costly.  What makes reaching for, grasping, and lifting objects a problematic action for 3-month-old infants? Although infants frequently see people lifting objects, the mechanism by which this action serves to displace an object depends on variables that are causally opaque to vision, such as the weight of the object and the force of the actor’s grasp. Without understanding how the posture of the hand and the forces it exerts allow an actor to lift and move an object, infants may have difficulty distinguishing pickup actions from hand movements that are guided by different intentions.  Despite this difficulty, however, young infants may represent the causal efficacy, intentionality, and efficiency of simpler, albeit less familiar, object-directed actions.  The next experiments test this possibility.
+exp1.scs.everyone <- cbind(model1.exp1.scs.table2,model1.exp1.scs.ci2,model1.exp1.scs.betas2)
+```
+
+```{r exp12.skerry}
+exp12.scs <- lumi.wide %>%
+  filter(experiment == "Exp.1" | experiment == "Exp.2" | experiment == "SCS.Exp.3")
+
+exp12.scs.model1 <- lmer(prop.ineff.all ~ clarity + (1|experiment),
+                         data = exp12.scs,
+                         REML=FALSE)
+
+# identify and check influence of observations
+exp12.scs.influence <- CookD(exp12.scs.model1, plot=FALSE) # influential 
+exp12.scs.exclude.n <- length(which(exp12.scs.influence > 4/60)) # how many subj exceeded cutoff?
+
+exp12.scs.model1.cooks <- lmer(prop.ineff.all ~ clarity + (1|experiment),
+                               data = exp12.scs %>% slice(which(exp12.scs.influence < 4/60)))
+exp12.scs.model1.table <- gen.m(exp12.scs.model1.cooks)
+exp12.scs.model1.ci <- gen.ci(exp12.scs.model1.cooks)[3:4,]
+
+
+
+exp12.scs.model1.cooks.beta <- lmer(scale(prop.ineff.all) ~ clarity + (1|experiment),
+                               data = exp12.scs %>% slice(which(exp12.scs.influence < 4/60)))
+exp12.scs.model1.betas <- gen.beta(exp12.scs.model1.cooks.beta)
+
+
+exp12.scs.findings <- cbind(exp12.scs.model1.table, exp12.scs.model1.betas, exp12.scs.model1.ci)
+```
+
+```{r exp12.skerry.everyone}
+exp12.scs.model1 <- lmer(prop.ineff.all ~ clarity + (1|experiment),
+                         data = exp12.scs,
+                         REML=FALSE)
+
+exp12.scs.model1.table2 <- gen.m(exp12.scs.model1)
+exp12.scs.model1.ci2 <- gen.ci(exp12.scs.model1)[3:4,]
+
+exp12.scs.model1.cooks.beta2 <- lmer(scale(prop.ineff.all) ~ clarity + (1|experiment),
+                               data = exp12.scs)
+exp12.scs.model1.betas2 <- gen.beta(exp12.scs.model1.cooks.beta2)
+
+
+exp12.scs.findings.everyone <- cbind(exp12.scs.model1.table2, exp12.scs.model1.betas2, exp12.scs.model1.ci2)
+```
+
+In Experiment 1, we tested for infants’ sensitivity to action efficiency using events based directly on past research (29), featuring reaches by an actor wearing a glove rather than a mitten (Figure 1). Three-month-old infants (N=`r length(unique(exp1.avg$subj_id))`; Mean age=`r round(exp1.info$mean,0)` days; range=`r exp1.info$min`-`r exp1.info$max`, `r exp1.info$f` female) viewed video clips of an actor who reached over a barrier, grasped and lifted a ball, and moved the ball to her side of the barrier (Figure 1A, H1). The height of this barrier varied across trials, and the person always adapted her reach to the barrier. After infants either habituated to these events (i.e. their attention declined by 50%), or looked for 12 trials, whichever came first, we measured their attention to alternating test events in which the person reached for the same ball as during habituation, but with no obstacles in her way (Figure 1B, T1). On alternating test trials, she reached on the same curvilinear path towards the ball (a familiar but newly inefficient action) or on a direct path (a novel but newly efficient action). The only differences between these events and the events from past studies (29) were that the actor in this study wore a tight-fitting white glove instead of a brown mitten, and she kept her hand in the same grasping position during the entire reach, instead of turning the ball over in the mitten after retrieving it.  Thus, the shape and positions of her fingers remained visible throughout the action.
+
+
+Across all experiments, we calculated the average looking time towards the efficient versus inefficient reach over 3 pairs of test events, and we analyzed these data using linear mixed effects models (47) For details about our analysis strategy, see Materials and Methods. In light of past findings that prereaching infants fail to interpret reaching actions by a mittened hand as costly (29), we expected infants to look equally at the two test events in Experiment 1.  Consistent with this prediction, infants looked equally to the inefficient and the efficient reach of the gloved hand (M~ineff~=`r summary.avg$look[2]`s, M~eff~=`r summary.avg$look[1]`s, `r report(exp1.findings, 2, 3, 2)`).  See Figure 2A. Nevertheless, looking preferences in this experiment differed marginally from those in the experiment on which this study was based (29), (`r report(exp1.scs.findings,4,3,2,flip)`).
+
+Do 3-month-old infants struggle to represent the cost of mittened and gloved reaches because of the gloves and mittens themselves? In Experiment 2, infants (N=`r length(unique(exp2.avg$subj_id))`; Mean age=`r round(exp2.info$mean,0)` days; range=`r exp2.info$min`-`r exp2.info$max`; `r exp2.info$f` female) were presented with the same actions from Experiment 1, except that the person performing the actions wore no gloves, further clarifying the contact relation between her hand and the object (Figure 1, H2 and T2).  Infants looked longer at the inefficient than the efficient reach of the bare hand (M~ineff~=`r summary.avg$look[4]`s, M~eff~=`r summary.avg$look[3]`s, `r report(exp2.findings, 2, 3, 2)`). Thus, infants indeed are sensitive to the cost of reaching in the familiar context of a bare-handed reach. Performance in Experiment 2 differed significantly from performance in the original study on which it was based (29) (`r report(exp2.scs.findings,4,3,2,flip)`). However, performance in Experiments 1 and 2 did not differ from each other (`r report(exp12.interaction,4,3,2, flip)`, excluding 3 influential participants). Collapsing across both Experiments 1 and 2, infants looked marginally longer at the inefficient than the efficient action (M~ineff~=`r exp12.describe$look[2]`s, M~eff~=`r exp12.describe$look[1]`s, `r report(exp12.together,2,3,2)`) (Figure 2).
+
+These experiments, together with past research (28, 29), suggest that untrained 3-month-old infants have weak and inconsistent responses to the efficiency of reaching and grasping actions.  Nevertheless, the significant difference between Experiment 2 and the experiment presenting a mittened hand (29) calls into question the conclusion, from past research, that 3-month-old infants with no action training are wholly insensitive to action efficiency. An exploratory analysis comparing the three experiments that used this method revealed that sensitivity to action efficiency increased with increases in the visibility of the form of the reaching hand, from a mitten that obscured its shape and texture (29)), to a glove that revealed its shape but obscured its color and texture (Experiment 1), to a fully visible hand (Experiment 2) (`r report(exp12.scs.findings,2,3,2)`). See the SI for a full report of this analysis. Because all studies showing effects of mittens training presented untrained prereaching infants with an actor who wore mittens, the action understanding of prereaching infants warrants further research, in which infants are presented with reaching actions that are not obscured by mittens.
 
 
 ## Prereaching infants’ understanding of reaching actions that cause state changes in objects
@@ -813,10 +797,10 @@ model1.exp3.table <- gen.m(model1.exp3)
 model1.exp3.ci1 <- gen.ci(model1.exp3)[3:6,]
 
 # identify and check influence of observations
-plot(influence(model1.exp3, "subj_id"), which="cook",
-     cutoff=4/40, sort=TRUE,
-     xlab="Cook´s Distance",
-     ylab="Subject ID")
+# plot(influence(model1.exp3, "subj_id"), which="cook",
+#      cutoff=4/40, sort=TRUE,
+#      xlab="Cook´s Distance",
+#      ylab="Subject ID")
 # 2 detected!
 
 # generate results without these influential subjects
@@ -848,7 +832,6 @@ contrasts.exp3.everyone <- cbind(difflsmeans(model1.exp3.beta2, test.effs="hab:t
 names(contrasts.exp3.everyone) <- c("beta", "term", "levels", "b", "se", "df", "t", "lower", "upper", "p")
 ```
 
-
 ```{r exp3.table}
 exp3 <- kable(cbind(model1.exp3.betas,model1.exp3.table,model1.exp3.ci), col.names = c("beta", "b", "se", "df", "t", "p", "lower", "upper"))
 
@@ -869,12 +852,12 @@ model1.exp13 <- lmer(formula = loglook ~ type * experiment + (1|subj_id) + (1|ex
 summary(model1.exp13)
 
 # identify and check influence of observations
-plot(influence(model1.exp13, "subj_id"), which="cook",
-     cutoff=4/40, sort=TRUE,
-     xlab="Cook´s Distance",
-     ylab="Subject ID")
+# plot(influence(model1.exp13, "subj_id"), which="cook",
+#      cutoff=4/40, sort=TRUE,
+#      xlab="Cook´s Distance",
+#      ylab="Subject ID")
 
-# 3 influential observations identified
+# 2 influential participants identified
 model1.exp13.cooks <- lmer(formula = loglook ~ type * experiment + (1|subj_id) + (1|experiment),
                      data = filter(exp13.avg, subj_id != "S1_6" & subj_id != "S4_9"), REML=FALSE,
                      control=lmerControl(optimizer="nmkbw",
@@ -894,9 +877,9 @@ exp13.interaction <- cbind(model1.exp13.table, model1.exp13.betas, model1.exp13.
 
 ```
 
-In Experiments 3-5, we explore whether prereaching infants view the act of reaching for and contacting an object as a costly action, performed with the intention to effect a change in the object’s state. Drawing inspiration from past studies of infants’ and adults’ causal perception (11, 12, 37, 40, 45), we tested infants’ responses to displays similar to Experiments 1-2 except that the person reached for and touched the ball, causing a change in its state on contact, and then returned her hand to its starting position, which caused the ball to return to its initial state.  To minimize the familiarity of both the action and the causal outcome while maximizing both the attractiveness of the state change event and the simplicity of the contact relation between the hand and the object, the actor reached with a gloved hand, as in Experiment 1, touched the object with the tips of her fingers, and a light and soft sound activated within the object for as long as the actor touched it (Fig 1, H3-5, T3-T4). Because this event has not been used in previous research, infants (N=`r length(unique(exp3.avg$subj_id))`; `r length(unique(exp3.avg$subj_id))/2` per condition; Mean age=`r round(exp3.info$mean,0)` days; range=`r exp3.info$min`-`r exp3.info$max`, `r exp3.info$f` female) were randomly assigned to one of two habituation conditions. In the experimental condition, infants watched the person reach over a barrier that prevented direct access to the goal object (H3), as in Experiments 1 and 2. In the control condition, infants watched the person perform the same reaches with the barrier behind the goal object, out of the actor’s way, as in the control condition of past experiments with mitten-trained infants (H4) (28). Across both conditions, all barriers were added digitally to the same videos: Thus, the actor performed identical actions in the two conditions, but only in the first condition did the actor reach efficiently on the habituation trials. After habituation, infants viewed the efficient, direct reach and the inefficient, indirect reach, as in Experiments 1-2, both of which activated the ball (T3). These two conditions allow us to test whether infants expected efficient reaches at test only when prior curved reaches were efficient.
+In Experiments 3-5, we explored whether prereaching infants view the act of reaching for and contacting an object as a costly action, performed with the intention to effect a change in the object’s state. Drawing inspiration from past studies of infants’ and adults’ causal perception (12, 13, 38, 42, 46), we tested infants’ responses to displays similar to Experiments 1-2 except that the person reached for and touched the ball, causing a change in its state on contact, and then withdrew her hand, which caused the ball to return to its initial state.  To minimize the familiarity of both the action and the causal outcome while maximizing both the attractiveness of the state change event and the simplicity of the contact relation between the hand and the object, the actor reached with a gloved hand, as in Experiment 1, and touched the object with the tips of her fingers, whereupon a light and soft sound activated within the ball for as long as the actor touched it (Fig 1, H3-H4, T3). Because this event has not been used in previous research, infants were randomly assigned to one of two habituation conditions (N=`r length(unique(exp3.avg$subj_id))`; `r length(unique(exp3.avg$subj_id))/2` per condition; Mean age=`r round(exp3.info$mean,0)` days; range=`r exp3.info$min`-`r exp3.info$max`, `r exp3.info$f` female). In the experimental condition, infants watched the person reach over a barrier that prevented direct access to the goal object (H3), as in Experiments 1 and 2. In the control condition, infants watched the person perform the same reaches with the barrier behind the goal object, out of the actor’s way, as in the control condition of past experiments with mitten-trained infants (H4) (29). Across both conditions, all barriers were added digitally to the same videos: Thus, the actor performed identical actions in the two conditions, but only in the first condition did the actor reach efficiently on the habituation trials. After habituation, infants viewed the efficient, direct reach and the inefficient, indirect reach, as in Experiments 1-2, both of which activated the object (T3). These two conditions allow us to test whether infants are sensitive to the efficiency of reaches at test only when prior curved reaches were efficient.
 
-In Experiment 3, infants responded differently to the test events across the two habituation conditions (`r report(exp3.findings, 4, 3, 2,flip)`, excluding two influential participants). When the actor’s reaches were initially constrained by a barrier (H1) in the experimental condition, infants looked longer, at test, at the inefficient than the efficient action (Mean~ineff~=`r summary.avg$look[6]`s, Mean~eff~=`r summary.avg$look[5]`s, `r report(contrasts.exp3, 4, 3, 2,flip)`). Their preference for the inefficient test action cannot be attributed to low-level preferences for the curvilinear reach, because infants in the control condition (H2) showed a small preference in the opposite direction (Mean~ineff~=`r summary.avg$look[8]`s, Mean~eff~=`r summary.avg$look[7]`s, `r report(contrasts.exp3, 7, 3, 2,flip)`). Infants’ preference for the inefficient action was stronger in this experiment than in Experiment 1, which presented the same reaching trajectories ending in object pickup rather than the simpler state change  (`r report(exp13.interaction,4,3,2)`, excluding 2 influential participants). Experiment 3 therefore provides evidence that infants have more robust expectations that object-directed reaches will be efficient, when the reaches terminate in a simple, causally transparent contact event.
+In Experiment 3, infants responded differently to the test events across the two habituation conditions (`r report(exp3.findings, 4, 3, 2,flip)`). When the actor’s reaches were initially constrained by a barrier (H1) in the experimental condition, infants looked longer, at test, at the inefficient than the efficient action (Mean~ineff~=`r summary.avg$look[6]`s, Mean~eff~=`r summary.avg$look[5]`s, `r report(contrasts.exp3, 4, 3, 2,flip)`). Their preference for the inefficient test action cannot be attributed to low-level preferences for the curvilinear reach, because infants in the control condition (H2) showed a small preference in the opposite direction (Mean~ineff~=`r summary.avg$look[8]`s, Mean~eff~=`r summary.avg$look[7]`s, `r report(contrasts.exp3, 7, 3, 2,flip)`). ). Infants’ preference for the inefficient action was stronger in this experiment than in Experiment 1, which presented the same reaching trajectories ending in object pickup rather than the simpler state change (`r report(exp13.interaction,4,3,2)`). Experiment 3 therefore provides evidence that infants have more robust expectations that object-directed reaches will be efficient, when the reaches terminate in a simple, causally transparent contact event.
 
 
 ### Experiment 4
@@ -920,11 +903,10 @@ model1.exp4.beta <- lmer(formula = scale(loglook) ~ type + (1|subj_id),
 model1.exp4.betas <- fixef(model1.exp4.beta)
 
 # identify and check influence of observations
-# model.exp4.cooks <- exclude.cooks(model1.exp4, exp4.avg, "subj_id")
-plot(influence(model1.exp4, "subj_id"), which="cook",
-     cutoff=4/20, sort=TRUE,
-     xlab="Cook´s Distance",
-     ylab="Subject ID")
+# plot(influence(model1.exp4, "subj_id"), which="cook",
+#      cutoff=4/20, sort=TRUE,
+#      xlab="Cook´s Distance",
+#      ylab="Subject ID")
 # no influential observations
 
 # comparing results to Exp 1
@@ -938,10 +920,10 @@ model1.exp34.table <- data.frame(coef(summary(model1.exp34)))
 model1.exp34.ci <- gen.ci(model1.exp34)[4:7,]
 
 # checking for influential observations - none found
-plot(influence(model1.exp34, "subj_id"), which="cook",
-     cutoff=4/40, sort=TRUE,
-     xlab="Cook´s Distance",
-     ylab="Subject ID")
+# plot(influence(model1.exp34, "subj_id"), which="cook",
+#      cutoff=4/40, sort=TRUE,
+#      xlab="Cook´s Distance",
+#      ylab="Subject ID")
 
 # standardized betas
 model1.exp34 <- lmer(formula = scale(loglook) ~ type * causal + (1|subj_id) + (1|experiment),
@@ -953,7 +935,6 @@ contrasts.exp34 <- difflsmeans(model1.exp34, test.effs="type:causal")[[1]]
 names(contrasts.exp34) <- str_replace_all(names(contrasts.exp34), ' ', '') # rename to fix issue with ` and - in Rmd
 names(contrasts.exp34) <- str_replace_all(names(contrasts.exp34), '-', '')
 ```
-
 
 ```{r exp4.table}
 exp4 <- kable(cbind(model1.exp4.betas,model1.exp4.table,model1.exp4.ci), col.names = c("beta", "b", "se", "df", "t", "p", "lower", "upper"))
@@ -969,8 +950,7 @@ exp34.findings <- data.frame(cbind(model1.exp34.betas,model1.exp34.table,model1.
 names(exp34.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
 ```
 
-In Experiment 4, pre-registered at https://osf.io/a5byn/, we tested whether this expectation depends on infants’ construal of the actor as a causal agent who changes the states of objects on contact. We introduced digital manipulations to the habituation and test events from Experiment 3 to create a small spatial and temporal gap between the termination of the actor’s reach and the activation of the object, thereby removing the key condition that elicits causal perception in older infants and adults (11, 12, 37, 40, 45). Infants (N=`r length(unique(exp4.avg$subj_id))`; Mean age=`r round(exp4.info$mean,0)` days; range=`r exp4.info$min`-`r exp4.info$max`; `r exp4.info$f` female) saw videos identical to those from the experimental condition of Experiment 3, except the actor’s hand never contacted the object (her fingers paused 50 pixels, or 2 cm above it), and the object changed state 0.5 seconds after the hand came to rest in midair (H5, T4). In contrast to Experiment 3, infants looked equally at test trials showing the inefficient and efficient actions (M~ineff~=`r summary.avg$look[10]`s, M~eff~=`r summary.avg$look[9]`s, `r report(exp4.findings, 2, 3, 2)`). Across Experiment 4 (H5, T4) and the experimental condition of Experiment 3 (H3, T3), infants responded differently to the test events depending on whether or not the person acted on the object on contact (`r report(exp34.findings, 4, 3, 2)`).  Therefore, Experiment 3 provides initial evidence that infants expect others to reach efficiently if this action causes a change in its goal object on contact, but not if the change in the object occurs after, and at a distance from, the end of the action.
-
+In Experiment 4, pre-registered at https://osf.io/a5byn/, we tested whether this ability depends on infants’ construal of the actor as a causal agent who changes the states of objects on contact. We introduced digital manipulations to the habituation and test events from Experiment 3 to create a small spatial and temporal gap between the termination of the actor’s reach and the activation of the object, thereby removing the key condition that elicits causal perception in older infants and adults (12, 13, 38, 42, 46). Infants (N=`r length(unique(exp4.avg$subj_id))`; Mean age=`r round(exp4.info$mean,0)` days; range=`r exp4.info$min`-`r exp4.info$max`; `r exp4.info$f` female) saw videos identical to those from the experimental condition of Experiment 3, except the actor’s hand never contacted the object (her fingers paused 50 pixels, or 2 cm above it), and the object changed state 0.5 seconds after the hand came to rest in midair (H5, T4). In contrast to Experiment 3, infants looked equally at test trials showing the inefficient and efficient actions  (M~ineff~=`r summary.avg$look[10]`s, M~eff~=`r summary.avg$look[9]`s, `r report(exp4.findings, 2, 3, 2)`). Across Experiment 4 (H5, T4) and the experimental condition of Experiment 3 (H3, T3), infants responded differently to the test events depending on whether or not the person acted on the object on contact (`r report(exp34.findings, 4, 3, 2)`). Therefore, Experiment 3 provides initial evidence that infants interpret reaching as costly if this action causes a change in its goal object on contact, but not if the change in the object occurs after, and at a distance from, the end of the action.
 
 ### Experiment 5
 ```{r exp5}
@@ -992,11 +972,10 @@ model1.exp5.beta <- lmer(formula = scale(loglook) ~ type * causal + (1|subj_id),
 model1.exp5.betas <- fixef(model1.exp5.beta)
 
 # identify and check influence of observations
-# model.exp5.cooks <- exclude.cooks(model1.exp5, exp5.avg, exp5.avg$subj_id)
-plot(influence(model1.exp5, "subj_id"), which="cook",
-     cutoff=4/52, sort=TRUE,
-     xlab="Cook´s Distance",
-     ylab="Subject ID")
+# plot(influence(model1.exp5, "subj_id"), which="cook",
+#      cutoff=4/52, sort=TRUE,
+#      xlab="Cook´s Distance",
+#      ylab="Subject ID")
 # no influential observations
 
 # look at contrasts within each caual condition
@@ -1011,12 +990,9 @@ exp5.findings <- data.frame(cbind(model1.exp5.betas,model1.exp5.table,model1.exp
 names(exp5.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
 ```
 
-
-To evaluate this suggestion further, we conducted a pre-registered direct replication of Experiments 3 and 4. In Experiment 5, pre-registered at https://osf.io/f2hvd/, we randomly assigned infants (N=`r length(unique(exp5.avg$subj_id))`, `r length(unique(exp5.avg$subj_id))/2` per condition; Mean age=`r round(exp5.info$mean,0)` days; range=`r exp5.info$min`-`r exp5.info$max`; `r exp5.info$f` female) to events that differed only in spatiotemporal continuity. This design allowed us to compare infants’ expectations about efficiency to causal (H3, T3) vs non-causal (H5, T4) actions, under testing conditions where all researchers were blind to condition as well as test events. We fully replicated the findings from Experiments 3 and 4: Infants again responded to the test events differently depending on whether or not the activation of the object occurred on contact with the hand (`r report(exp5.findings, 4, 3, 2)`). As in Experiment 3, infants looked longer at the inefficient than the efficient reach when the person appeared to intentionally cause a change in the object, (M~ineff~=`r summary.avg$look[14]`s, M~eff~=`r summary.avg$look[13]`s, `r report(contrasts.exp5, 8, 3, 1,flip)`); as in Experiment 4, infants looked equally to the inefficient and efficient reaches when she did not appear to cause this outcome (M~ineff~=`r summary.avg$look[12]`s, M~eff~=`r summary.avg$look[11]`s, `r report(contrasts.exp5, 3, 3, 2,flip)`). Although 3-month-old infants have limited experience acting on objects themselves, they understand that other people intend to cause changes in the world through their actions, and they represent the cost of these actions. Infants exhibited this expectation in Experiments 3 and 5, both of which presented clear information that a change in the goal object occurred on contact with the actor’s hand.  
-
+To evaluate this suggestion further, we conducted a pre-registered direct replication of Experiments 3 and 4. In Experiment 5, pre-registered at https://osf.io/f2hvd/, we randomly assigned infants to events that differed only in spatiotemporal continuity: the object either activated on contact with the agent’s hand, or after a small gap in space and time (N=`r length(unique(exp5.avg$subj_id))`, `r length(unique(exp5.avg$subj_id))/2` per condition; Mean age=`r round(exp5.info$mean,0)` days; range=`r exp5.info$min`-`r exp5.info$max`; `r exp5.info$f` female). This design allowed us to compare infants’ sensitivity to efficiency for causal (H3, T3) versus non-causal (H5, T4) actions, under testing conditions where all researchers were blind to condition as well as test events. We fully replicated the findings from Experiments 3 and 4: Infants again responded to the test events differently depending on whether or not the activation of the object occurred on contact with the hand (`r report(exp5.findings, 4, 3, 2)`). As in Experiment 3, infants looked longer at the inefficient than the efficient reach when the person appeared to cause a change in the object (M~ineff~=`r summary.avg$look[14]`s, M~eff~=`r summary.avg$look[13]`s, `r report(contrasts.exp5, 8, 3, 1,flip)`); as in Experiment 4, infants looked equally to the inefficient and efficient reaches when she did not appear to cause this outcome(M~ineff~=`r summary.avg$look[12]`s, M~eff~=`r summary.avg$look[11]`s, `r report(contrasts.exp5, 3, 3, 2,flip)`). Although 3-month-old infants have limited experience acting on objects themselves, they understand that other people intend to cause changes in the world through their actions, and they represent the cost of these actions. Infants exhibited this ability in Experiments 3 and 5, both of which presented clear information that a change in the goal object occurred on contact with the actor’s hand. 
 
 ## Comparing state change and entrainment actions
-
 
 ```{r meta}
 # set contrasts for analysis - compare effects against the grand mean
@@ -1025,80 +1001,90 @@ op <- options(contrasts = c("contr.sum", "contr.poly"))
 # strangely, we need to flip reference levels so that ref gets compred against grand mean
 lumi.wide$goal <- relevel(lumi.wide$goal, ref = "state.change")
 lumi.wide$hab <- relevel(lumi.wide$hab, ref = "constrained")
-lumi.wide$mitten <- relevel(lumi.wide$mitten, ref = "yes")
 lumi.wide$training <- factor(lumi.wide$training, levels = c("effective.training", "ineffective.training", "no.training"))
 lumi.wide$causal <- relevel(lumi.wide$causal, ref = "yes")
 
 # full exploratory model
-model1.all <- lmer(formula = prop.ineff.all ~ training + goal + hab + causal + mitten + (1|experiment) + (1|ageday) + (1|sex) + (1|paper), data = lumi.wide)
+model1.all <- lmer(formula = prop.ineff.all ~ training + goal + hab + causal + clarity + (1|experiment) + (1|ageday) + (1|sex) + (1|paper), data = lumi.wide,control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
 
 # identify and check influence of observations
 meta.influence <- CookD(model1.all, plot=FALSE) # influential 
 meta.exclude.n <- length(which(meta.influence > 4/264)) # how many subj exceeded cutoff?
 
-model1.all.cooks <- lmer(formula = prop.ineff.all ~ training + goal + hab + causal + mitten + (1|experiment) + (1|ageday) + (1|sex) + (1|paper), data = lumi.wide %>% slice(which(meta.influence < 4/264)))
+model1.all.cooks <- lmer(formula = prop.ineff.all ~ training + goal + hab + causal + clarity + (1|experiment) + (1|ageday) + (1|sex) + (1|paper), data = lumi.wide %>% slice(which(meta.influence < 4/264)),control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
 model1.all.table <- gen.m(model1.all.cooks)
-model1.all.ci <- gen.ci(model1.all.cooks)[6:12,]
+model1.all.ci <- confint.merMod(model1.all.cooks,method="Wald")[6:12,]
 
 # standardized values
-model1.all.beta <- lmer(formula = scale(prop.ineff.all) ~ training + goal + hab + causal + mitten + (1|experiment) + (1|ageday) + (1|sex) + (1|paper), data = lumi.wide %>% slice(which(meta.influence < 4/264)))
+model1.all.beta <- lmer(formula = scale(prop.ineff.all) ~ training + goal + hab + causal + clarity + (1|experiment) + (1|ageday) + (1|sex) + (1|paper), data = lumi.wide %>% slice(which(meta.influence < 4/264)),control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
 model1.all.betas <- fixef(model1.all.beta)
-
 
 meta.findings <- data.frame(cbind(model1.all.betas, model1.all.table, model1.all.ci))
 names(meta.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
-rownames(meta.findings) <- c("(Intercept)", "effective training", "ineffective training", "state change goal", "constrained habituation", "causally effective", "mitten")
+rownames(meta.findings) <- c("(Intercept)", "effective training", "ineffective training", "state change goal", "reach constrained by barrier", "action on contact", "clarity of hand")
+```
+
+```{r meta.everyone}
+# full exploratory model
+model1.all <- lmer(formula = prop.ineff.all ~ training + goal + hab + causal + clarity + (1|experiment) + (1|ageday) + (1|sex) + (1|paper), data = lumi.wide, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+model1.all.table2 <- gen.m(model1.all)
+model1.all.ci2 <- confint.merMod(model1.all,method="Wald")[6:12,]
+
+# standardized values
+model1.all.beta2 <- lmer(formula = scale(prop.ineff.all) ~ training + goal + hab + causal + clarity + (1|experiment) + (1|ageday) + (1|sex) + (1|paper), data = lumi.wide,control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+model1.all.betas2 <- fixef(model1.all.beta2)
+
+
+meta.findings.everyone <- data.frame(cbind(model1.all.betas2, model1.all.table2, model1.all.ci2))
+names(meta.findings.everyone) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
+rownames(meta.findings.everyone) <- c("(Intercept)", "effective training", "ineffective training", "state change goal", "reach constrained by barrier", "action on contact", "clarity")
 
 ```
 
-To explore these effects further and compare them to past research using the same method at the same age (28), we performed a meta-analysis over ten experiments (Experiments 1-5, and all experiments from Skerry et al. (28); total N=`r length(unique(lumi.raw.avg$subj_id))`; see Fig S1). Action understanding was more robust after mittens training, relative to no training (`r report(meta.findings, 2, 3, 2)`), as demonstrated in past training studies (27, 28, 31, 32). Infants also held stronger expectations for efficient reaching when the actor simply touched an object and caused a change in its state than when she lifted and displaced the object (`r report(meta.findings, 4, 3, 2)`). Knowledge of the causal intentions and costs underlying reaching actions therefore arises without training, but it is more robust when infants view causally transparent actions or receive mittens training. For full meta-analytic methods and results, see SM.
-
-To explore these effects further and compare them to past research (28), we performed a meta-analysis over the ten experiments (Experiments 1-5, and all experiments from Skerry et al. (28)) that used the present paradigm with 3-month-old infants (total N=`r length(unique(lumi.raw.avg$subj_id))`) (Fig. S1). As shown in past training studies (22, 28, 30, 42), action understanding was more robust after training, relative to no training (`r report(meta.findings, 2, 3, 2)`). Infants also held stronger expectations for efficient reaching when the actor simply touched an object and caused a change in its state, as in Experiments 1-3, than when she lifted and displaced the object, as in Experiments 4-5 and all experiments in Skerry et al. (28) (`r report(meta.findings, 4, 3, 2)`).  Knowledge of the causal intentions and costs underlying reaching actions therefore arises without training, but is more robust if actions are causally transparent or if infants receive action training. For full meta-analytic methods and results, see SI. 
-
+To explore these effects further and compare them to past research using the same method at the same age (29), we performed a meta-analysis over ten experiments (Experiments 1-5, and all experiments from Skerry et al. (29); total N=`r length(unique(lumi.raw.avg$subj_id))`; see Fig S1). Action understanding was more robust after mittens training, relative to no training (`r report(meta.findings, 2, 3, 2)`), as demonstrated in past training studies (27, 28, 31, 32). Infants also showed stronger sensitivity to the cost of reaching when the actor simply touched an object and caused a change in its state than when she lifted and displaced the object (`r report(meta.findings, 4, 3, 2)`). Most importantly, infants responded more to the cost of actions when these actions occurred on contact, rather than at a distance and after a delay (`r report(meta.findings,6,3,2)`). Knowledge of the causal intentions and costs underlying reaching actions therefore arises without training, but it is more robust when infants view causally transparent actions or receive mittens training. For full meta-analytic methods and results, see SI.
 
 ## Reliability (Methods Section)
 ```{r reliability}
+exp1.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.1")$look.recoded, filter(lumi.rel, experiment == "Exp.1")$look.orig), model = "twoway", type = "agreement", unit = "single")
 
-# data for reliability still has old expeirmental sequence (exp 1 = exp3, exp 2 = exp 4, exp 3 = exp 5, exp 4 = exp 1, exp 5= exp2)
+exp2.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.2")$look.recoded, filter(lumi.rel, experiment == "Exp.2")$look.orig), model = "twoway", type = "agreement", unit = "single")
 
-exp1.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.3")$newlook, filter(lumi.rel, experiment == "Exp.3")$look.orig), model = "twoway", type = "agreement", unit = "single")
-exp2.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.4")$newlook, filter(lumi.rel, experiment == "Exp.4")$look.orig), model = "twoway", type = "agreement", unit = "single")
-exp3.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.5")$newlook, filter(lumi.rel, experiment == "Exp.5")$look.orig), model = "twoway", type = "agreement", unit = "single")
-exp4.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.1")$newlook, filter(lumi.rel, experiment == "Exp.1")$look.orig), model = "twoway", type = "agreement", unit = "single")
-exp5.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.2")$newlook, filter(lumi.rel, experiment == "Exp.2")$look.orig), model = "twoway", type = "agreement", unit = "single")
+exp3.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.3")$look.recoded, filter(lumi.rel, experiment == "Exp.3")$look.orig), model = "twoway", type = "agreement", unit = "single")
 
+exp4.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.4")$look.recoded, filter(lumi.rel, experiment == "Exp.4")$look.orig), model = "twoway", type = "agreement", unit = "single")
+
+exp5.rel <- icc(cbind(filter(lumi.rel, experiment == "Exp.5")$look.recoded, filter(lumi.rel, experiment == "Exp.5")$look.orig), model = "twoway", type = "agreement", unit = "single")
 ```
 
+To assess reliability, 50% of test trials from participants across Experiments 1-5 (`r nrow(lumi.wide %>% filter(paper=="LBS"))/2` participants, `r nrow(lumi.rel)` trials) were randomly selected and coded by additional researchers who were unaware of experimental condition, and test trial order. The intraclass correlation coefficient (ICC) between the original data, and this newly coded data, was `r exp1.rel$value` [`r exp1.rel$lbound`, `r exp1.rel$ubound`], `r exp2.rel$value` [`r exp2.rel$lbound`, `r exp2.rel$ubound`], `r exp3.rel$value` [`r exp3.rel$lbound`, `r exp3.rel$ubound`], `r exp4.rel$value` [`r exp4.rel$lbound`, `r exp4.rel$ubound`], `r exp5.rel$value` [`r exp5.rel$lbound`, `r exp5.rel$ubound`], for Experiments 1 through 5, respectively.
 
-To assess reliability, 50% of test trials from participants across Experiments 1-5 (`r length(unique(lumi.wide$subj_id))/2` participants, `r nrow(lumi.rel)` trials) were randomly selected and coded by additional researchers who were unaware of experimental condition, and test trial order. The intraclass correlation coefficient (ICC) between the original data, and this newly coded data, was `r exp1.rel$value` [`r exp1.rel$lbound`, `r exp1.rel$ubound`], `r exp2.rel$value` [`r exp2.rel$lbound`, `r exp2.rel$ubound`], `r exp3.rel$value` [`r exp3.rel$lbound`, `r exp3.rel$ubound`], `r exp4.rel$value` [`r exp4.rel$lbound`, `r exp4.rel$ubound`], `r exp5.rel$value` [`r exp5.rel$lbound`, `r exp5.rel$ubound`], for Experiments 1 through 5, respectively.
 
+# Supplementary Results
 
-# Supplemental Results
+## Comparing results including and excluding influential participants.
+Across all of our experiments, we checked for influential participants in every model using Cook’s Distance (69), as stated in the main text. This is a method for outlier detection: The purpose of this step in our analysis is to identify individuals whose inclusion in the analysis may have undue influence by either masking the effect, which is otherwise present across the rest of the sample, or by driving the effect, which is otherwise absent across the rest of the sample. Below are the results from the main text detailing how many influential participants were detected in each analysis, and report the results including these participants. Overall, none of the main conclusions reported in the main text differ depending on the inclusion or exclusion of these participants (though see below for a minor difference in the findings from Experiment 2, and the analysis collapsing across Experiment 1 and Skerry et al. (2013)).
 
-## Primary Analyses for Experiments 1-3, not excluding influential participants
-Across all of our experiments, we checked for influential participants in every model we fit, as stated in the main text. This is a way of detecting outliers, or individuals whose inclusion in the analysis might have undue influence by either masking the effect, which is otherwise present across the rest of the sample, or by driving the effect, which is otherwise absent across the rest of the sample. We did not find any influential observations in the primary analyses in Experiments 4 and 5, but did detect some in Experiments 1 through 3. 
+In the primary analysis for Experiment 1, we detected one influential participant. Including this participant in the analysis generates the same finding as reported in the main text: Infants looked equally at the efficient vs inefficient reach of a gloved hand  (`r report(exp1.findings.everyone, 2, 3, 2)`). In the analysis comparing Experiment 1 to Skerry et al. (2013) Experiment 3, we detected 2 influential participants. Including them results in a null difference between these two experiments (`r report(exp1.scs.everyone,4,3,2,flip)`). This difference does not change our interpretation of Experiment 1: Infants do not appear to respond to the efficiency of pickup actions when the person reaching wears a glove or a mitten.
 
-### Experiment 1
-In the primary analysis for Experiment 1, we detected one influential participant. Including them in the sample generates the same finding as reported in the main text: Infants looked equally at the efficient vs inefficient reach of a mittened hand (`r report(exp1.findings.everyone, 2, 3, 2)`).
+In the primary analysis for Experiment 2, we detected 2 influential participants. Including them in the sample generates a marginal effect in the same direction as that reported in the main text: Infants looked longer at the inefficient than the efficient reach of a bare hand (`r report(exp2.findings.everyone, 2, 3, 2)`). In the analysis comparing Experiment 2 to Skerry et al. (2013) Experiment 3, we detected 1 influential participant. Including them results in the same finding as reported in the main text: Infants’ looking preferences significantly differed across these two experiments (`r report(exp2.scs.everyone,4,3,2, flip)`). These findings do not change our conclusion in the main text: Experiments 1 and 2 overall show that infants have inconsistent, fragile expectations about the efficiency of reaches that result in displacing objects.
 
-### Experiment 2
-In the primary analysis for Experiment 2, we detected 2 influential participants. Including them in the sample generates a marginal effect in the same direction as that reported in the main text: Infants looked longer at the inefficient than the efficient reach of a bare hand (`r report(exp2.findings.everyone, 2, 3, 2)`). As stated in the main text, our overall conclusion from Experiments 1 and 2 is that infants have inconsistent, fragile expectations about the efficiency of reaches that result in displacing objects. 
+In the analysis collapsing across Experiments 1 and 2, we found 1 influential participant. Inclusion of that participant generates a null effect (`r report(exp12.together.everyone,2,3,2)`), whereas in the main text this effect was marginal, but our conclusion is the same: Infants do not show robust sensitivity to the cost of reaching actions when these actions result in objects being displaced. In the analysis comparing infants’ looking preferences across Experiments 1 and 2, we found 3 influential participants, and including them results in the same result as reported in the main text: Infants’ looking preferences did not differ across the two experiments, (`r report(exp12.interaction.everyone, 4, 3, 2, flip)`).
 
-### Experiment 3
-In the primary analysis for Experiment 3, we detected 2 influential participants. Including them in the sample generates the same finding as reported in the main text: Infants' looking preferences for the test events differed as a function of whether they were habituated to constrained action over a barrier (experimental group) or the same actions not over a barrier (control group) (`r report(exp3.findings.everyone, 4, 3, 2,flip)`). In the experimental condition, infants looked longer at the inefficient action (`r report(contrasts.exp3.everyone,4,3,2,flip)`). In the control condition, infants looked equally at the two test actions (`r report(contrasts.exp3.everyone, 7,3,2,flip)`).
+In the primary analysis for Experiment 3, we detected 2 influential participants. Including them in the sample generates the same finding as reported in the main text: Infants’ looking preferences for the test events differed as a function of whether they were habituated to constrained action over a barrier (experimental group) or the same actions not over a barrier (control group) (`r report(exp3.findings.everyone, 4, 3, 2,flip)`). In the experimental condition, infants looked longer at the inefficient action (`r report(contrasts.exp3.everyone,4,3,2,flip)`). In the control condition, infants looked equally at the two test actions (`r report(contrasts.exp3.everyone, 7,3,2,flip)`).
 
-## Comparing Experiments 1-2 with Skerry et al. (2013)
+We did not detect any influential participants in the analyses for Experiments 4 and 5.
 
-We compared the results of Experiment 4 and 5 against those from Skerry et al’s Experiment 3, wherein infants received no mittens training and viewed a person reaching with a mittened hand. The results of Experiment 5 (no mitten) differed from those of the earlier experiment (mitten), `r report(exp2.scs.findings, 4, 3, 2)`, mixed effects model with fixed interaction between experiment and test event and random intercept for participants, one influential participant excluded on the basis of Cook’s Distance. In addition, the results from Experiment 4 (mitten) marginally differed from those in of Skerry et al. (mitten),  `r report(exp1.scs.findings, 4, 3, 2)`, mixed effects model with fixed interaction between experiment and test events and random intercept for participants, 2 influential participants excluded on the basis of Cook's Distance. 
-
+## Comparing bare hands, gloves, and mittens 
+Because Experiments 1 and 2 used the methods of Skerry et al. (2013), the primary difference between the events from Skerry et al. (2013) (SCS), and Experiments 1 and 2 from the main text concerned the presentation of the reaching hand, which was bare in Experiment 2, covered by tight-fitting gloves in Experiment 1, and covered by thick mittens in SCS, as in all the prior published research involving mittens training. Could infants' responses to the reaches from these experiments be explained, in part, by how easy it was to see the configuration of the hand (easy in Experiment 2, slightly harder in Experiment 1, and even harder in SCS)? To explore this question, we analyzed infants' proportion looking to the inefficient action in Experiment 1, Experiment 2, and the comparable experiment from SCS where infants had no mittens training (SCS Experiment 3), and asked whether the clarity of the person's hand in each of these experiments (2 in Experiment 2, 1 in Experiment 1, and 0 in SCS Experiment 3) predicted differences in looking preferences, controlling for correlated data within experiments. This analysis revealed that infants' sensitivity to the efficiency of this reach increased with increasingly clear information about the form of the hand (`r report(exp12.scs.findings,2,3,2)`, excluding `r exp12.scs.exclude.n` influential participants). This finding held regardless of whether the influential participants were excluded or included (in the latter case, `r report(exp12.scs.findings.everyone,2,3,2)`). This post hoc analysis raises the possibility that the use of mittens obscuring the hand in all past research with 3-month-old infants underestimates the infants’ sensitivity to natural, bare-handed acts of reaching. Further research is needed to test this possibility.  
 
 ## Meta-analytic results
 
-To assess the unique effects of our experimental manipulations in Experiments 1-5 and in Skerry et al. (28), we performed an analysis over these two papers (total N=`r length(unique(lumi.raw.avg$subj_id))`, 12 conditions). Our analytic approach allows us to assess the independent effects of 5 manipulations: the type of or absence of motor training, the presence or absence of barrier preventing a direct reach for the object during habituation, the nature of the goal (to change the state of an object or pick it up), the presence or absence of action on contact, and the presence of absence of mittens on the actor. The analysis also allows us to control for the participant variables age and sex, and model the nested structure of the data (e.g. looks clustered within experiments and within papers). For ease of interpretation, we used average proportion looking to the inefficient action in this analysis, following Skerry et al. (28)). 
+To assess the effects of our experimental manipulations in Experiments 1-5 and in Skerry et al. (29), we performed an analysis over these two papers (total N=`r length(unique(lumi.raw.avg$subj_id))`, 12 conditions). Our analytic approach allows us to assess the independent effects of 5 manipulations: the type of or absence of motor training, the presence or absence of a barrier preventing a direct reach for the object during habituation, the nature of the goal (to change the state of an object or pick it up), the presence or absence of action on contact, and the presence or absence of mittens on the actor. The analysis also allows us to control for the participant variables of age and sex, and model the nested structure of the data (e.g. looks clustered within experiments and within papers). For ease of interpretation, we used average proportion looking to the inefficient action in this analysis, following Skerry et al. (29). The findings below exclude 16 participants on the basis of Cook’s Distance, leaving 248 infants in the final sample.  See Table S1 for results including all participants.
 
-This analysis confirmed the findings from the individual experiments reported in the main text and in Skerry et al. (28):  Infants’ expectations were stronger when the observed action was spatiotemporally continuous with its effect (i.e., appeared to be causal),  `r report(meta.findings, 6, 3, 2)`, when infants received effective motor training (sticky mittens), relative to no training `r report(meta.findings, 2, 3, 2)`, when the observed agent's actions were constrained by a barrier and were efficiently adapted to that barrier, relative to the same actions that were unconstrained by a barrier, `r report(meta.findings, 5, 3, 2)`, and when the agent pursued a state change goal, relative to a pickup goal, `r report(meta.findings, 4, 3, 2)`. We also found that infants’ expectations were marginally *negatively* affected when they received ineffective motor training (non-sticky mittens), relative to no training, `r report(meta.findings, 3, 3, 2)`, and were unaffected when the actor wore a mitten, relative to no mitten `r report(meta.findings, 7, 3, 2)`, as reported in the main text. These findings provide further evidence that action experience alters action interpretation, for good or for ill, but so does causal information and information about efficiency.
+This analysis confirmed the findings from the individual experiments reported in the main text and in Skerry et al. (28):  Infants’ expectations were stronger when the observed action was spatiotemporally continuous with its effect (i.e., appeared to be causal),  `r report(meta.findings, 6, 3, 2)`, when infants received effective motor training (sticky mittens), relative to no training `r report(meta.findings, 2, 3, 2)`, when the observed agent's actions were constrained by a barrier and were efficiently adapted to that barrier, relative to the same actions that were unconstrained by a barrier, `r report(meta.findings, 5, 3, 2)`, and when the agent pursued a state change goal, relative to a pickup goal, `r report(meta.findings, 4, 3, 2)`. We also found that infants’ expectations were marginally *negatively* affected when they received ineffective motor training (non-sticky mittens), relative to no training, `r report(meta.findings, 3, 3, 2)`, and improved as the form of the hand became clearer `r report(meta.findings, 7, 3, 2)`, but neither of the latter two findings was present in the full analysis with all participants (see Table S1). These findings provide further evidence that action experience alters action interpretation, but so does causal information and information about efficiency.
 
-```{r figS1a, fig.width = 20, include=TRUE}
+```{r figS1a, eval=FALSE, include=FALSE}
 
 # avg looks to eff and ineff, grouped by experiment, with full variable info 
 figS1.raw <- ggplot(data = dplyr::filter(lumi.raw.avg), aes(type, look, fill=experiment))
@@ -1106,32 +1092,32 @@ figS1.raw.full <- figS1.raw +
   geom_boxplot(outlier.colour = NA, alpha = 0.8)+
   geom_errorbar(data = filter(summary.avg), size = .5, width = 0, aes(ymin=look-ci, ymax=look+ci), colour= "red") +
   stat_summary(fun.y = mean, geom = "point", shape=21, size=3, position = "dodge", colour = "red", fill = "red") +
-  ylab("\n \n \n \n \n \n \n Looking Time (s)") +
+  ylab("Looking Time (s)") +
   xlab("Test Event")+
   coord_cartesian(ylim = c(0, 40)) +
   geom_point(alpha = 0.1)+
   geom_line(alpha = 0.1, aes(group = subj_id))+
-  facet_grid(~experiment+training+goal+hab+causal+mitten)+
+  facet_grid(~experiment+training+goal+hab+causal+hand)+
   scale_x_discrete(labels = c("ineff","eff"))+
   theme_bw(14)+
   scale_fill_brewer(palette = "Greys")+
   theme(legend.position="none", strip.text.x = element_blank())
 ```
 
-```{r figS1b, fig.width = 20, fig.height=11, include=TRUE}
+```{r figS1b, eval=FALSE, include=FALSE}
 # prop looks ineff, grouped by experiment, with full variable info 
 figS1.prop <- ggplot(data = dplyr::filter(lumi.prop.avg), aes(testtype, look, fill=experiment))
 figS1.prop.full <- figS1.prop + 
   geom_boxplot(alpha = 0.8)+
   geom_violin(fill = NA, width = 0.5)+
   stat_summary(fun.y = mean, geom = "point", shape =21, size=3, position = "dodge", colour = "red", fill = "red") +
-  ylab("\n \n \n \n \n \n Proportion Looking \n to Inefficient") +
+  ylab("Proportion Looking to Inefficient") +
   xlab(element_blank())+
   geom_jitter(width = .05, alpha = 0.2)+
   coord_cartesian(ylim = c(0.2,0.8)) +
   stat_summary(fun.data = mean_cl_boot, geom = "errorbar", colour="red", position = position_dodge(width = 5), width = 0) +
   geom_hline(yintercept=0.5, alpha=0.4)+
-  facet_grid(~experiment+training+goal+hab+causal+mitten+stimuli)+
+  facet_grid(~experiment+training+goal+hab+causal+hand+stimuli)+
   theme_bw(14)+
   scale_fill_brewer(palette = "Greys")+
   theme(strip.placement = "outside") +
@@ -1139,23 +1125,14 @@ figS1.prop.full <- figS1.prop +
 
 # add annotations
 
-grid.arrange(figS1.prop.full, figS1.raw.full, heights = c(0.5,0.5))
-
-grid.text("Experiment", x = 0.07, y = 0.978)
-grid.text("Motor training", x = 0.07, y = .95)
-grid.text("Action relative to barrier", x = 0.07, y = 0.89)
-grid.text("Goal", x = 0.07, y = .92)
-grid.text("Action on contact", x = 0.07, y = 0.861)
-grid.text("Actor wearing mitten", x = 0.07, y = 0.832)
-grid.text("Displays", x = 0.07, y = 0.805)
+plot_grid(figS1.prop.full, figS1.raw.full, labels = c("A", "B"), nrow=2)
 
 ```
 
-**Figure S1**. Looking time in seconds towards the efficient versus inefficient reach (bottom), and proportion looking towards the inefficient reach (top) at test across Experiments 1-5 (n=152) and across Experiments 1-5 in Skerry et al. (SCS)32 (n=112). Labels above each panel list the experiment name (Exp. 1-5, SCS Exp. 1-5), type of motor training (none, ineffective non-sticky mittens, or effective sticky mittens), whether actions during habituation were constrained or unconstrained by a barrier, goal (state.change or pick.up), whether actions resulted in contact with the object, whether the actor wore a mitten, and video displays listed in Figure 1. Error bars around means indicate within-subjects 95% confidence intervals (bottom) and bootstrapped 95% confidence intervals (top). Individual points (top) or pairs of connected points (bottom) indicate data from a single participant. Horizontal bars within boxes indicate medians, and boxes indicate the middle 2 quartiles of data. Violin plots (top) indicate distribution of data, area scaled proportionally to the number of observations.
+![**Figure S1**. Figure S1. (A) Proportion looking towards the inefficient reach and (B) looking time in seconds towards the efficient versus inefficient reach, and at test across Experiments 1-5 (n=152) and across Experiments 1-5 in Skerry et al. (SCS) (29) (n=112). Labels above each panel list the experiment name (Exp. 1-5, SCS Exp. 1-5), type of motor training (none, ineffective non-sticky mittens, or effective sticky mittens), whether actions during habituation were constrained or unconstrained by a barrier, goal (state.change or pick.up), whether actions resulted in contact with the object, whether the actor reached with a bare, gloved, or mittened hand, and video displays listed in Figure 1. Error bars around means indicate within-subjects 95% confidence intervals (B) and bootstrapped 95% confidence intervals (A). Individual points (A) or pairs of connected points (B) indicate data from a single participant. Horizontal bars within boxes indicate medians, and boxes indicate the middle 2 quartiles of data. Violin plots (A) indicate distribution of data, area scaled proportionally to the number of observations. All data and analyses are open source and available at https://osf.io/rcsns/.](/Users/shariliu/Documents/HarvardLDS/Studies/LUMI/github/analyses/figS1_final.pdf)
 
 
-
-```{r meta_figure, include=TRUE, fig.width=12, fig.height = 8, cache=FALSE}
+```{r meta_figure, eval=FALSE, include=FALSE}
 # two ways of plotting: first, plotting model effects
 # plot_model(model1.all, sort.est=TRUE, show.values=TRUE, digits=3, colors = "bw",  title = "prop.ineff.all ~ training + hab + goal + mitten + causal + (1+first.test|experiment) + (1|ageday) + (1|sex) + (1|paper)")
 
@@ -1173,22 +1150,20 @@ plot(allEffects(model1.all.cooks),
 ```
 
 
-**Figure S2.** Effect plots for model investigating predictors of sensitivity to action efficiency across Experiments 1-5 and Skerry et al. (2013) 32 (total N=264, 247 included in final analysis, 17 excluded on the basis of Cook’s Distance). Each point shows estimates of effects at each level of all categorical predictors: Type of motor training (none, ineffective non-sticky mittens, or effective sticky mittens), the goal of the actor (state change vs pick up), action during habituation (constrained or unconstrained by a barrier), whether actions resulted in contact with the object (yes or no), whether the actor wore a mitten (yes or no). Error bars indicate 95% confidence intervals. See Table S1 for full results.
+![**Figure S2.**. Effect plots for model investigating predictors of sensitivity to action efficiency across Experiments 1-5 and Skerry et al. (29) (total N=264, 248 included in the final analysis, 16 excluded on the basis of Cook’s Distance). Each point shows estimates of effects at each level of all predictors: Type of motor training (none, ineffective non-sticky mittens, or effective sticky mittens), the goal of the actor (state change vs pick up), action during habituation (constrained or unconstrained by a barrier), whether actions resulted in contact with the object (yes or no), and the clarity of the form of the hand (0=mittens, 1=gloves, 2=bare hand). Error bars indicate 95% confidence intervals. See Table S1 for full results.](/Users/shariliu/Documents/HarvardLDS/Studies/LUMI/github/analyses/figS2_final.pdf)
 
 ***
 
 ***
-**Table S1.** Regression table for model investigating predictors of sensitivity to action efficiency across Experiment 1-5 and all experiments from Skerry et al. (total N=`r length(unique(lumi.wide$subj_id))`, `r length(unique(lumi.wide$subj_id))-meta.exclude.n` included in final analysis, `r meta.exclude.n` excluded on the basis of Cook's Distance). Dependent measure is proportion looking towards the inefficient reach, averaged across 3 test trials during test. Categorical predictors were coded using sum contrasts, and fixed effects from the model should therefore be interpreted with respect to the grand mean (with respect to 0). Model formula: `prop.ineff.all ~ training + goal + hab + causal + mitten + (1|experiment) + (1|ageday) + (1|sex) + (1|paper)`.
+**Table S1.** (A) Regression table for model investigating predictors of sensitivity to action efficiency across Experiment 1-5 and all experiments from Skerry et al. (29) (total N=`r length(unique(lumi.wide$subj_id))`, `r length(unique(lumi.wide$subj_id))-meta.exclude.n` included in final analysis, `r meta.exclude.n` excluded on the basis of Cook's Distance). (B) Regression table for the same analysis, including all participants. Dependent measure is proportion looking towards the inefficient reach, averaged across 3 test trials during test. Categorical predictors were coded using sum contrasts, and fixed effects from the model should therefore be interpreted with respect to the grand mean. Model formula `prop.ineff.all ~ training + goal + hab + causal + mitten + (1|experiment) + (1|ageday) + (1|sex) + (1|paper)`.
 
 
 ```{r meta_table, include=TRUE}
 kable(meta.findings, col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
 
+
+kable(meta.findings.everyone, col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
 ```
-
-
-This analysis confirmed that first-person action experience is not the only way to enhance infants’ appreciation of the causal and intentional aspects of action. It also confirmed the findings from the individual experiments reported in the main text and from Skerry et al. (2013):  Infants’ expectations were stronger when the observed action was spatiotemporally continuous with its effect (i.e., appeared to be causal),`r report(meta.findings, 6, 3, 2)`, when infants received effective motor training (sticky mittens), relative to no training, `r report(meta.findings, 2, 3, 2)`, when the observed agent's actions were constrained by a barrier and were efficiently adapted to that barrier, relative to the same actions that were unconstrained by a barrier, `r report(meta.findings, 5, 3, 2)`, and when the agent pursued a state change goal, relative to a pickup goal, `r report(meta.findings, 4, 3, 2)`. We also found that infants’ expectations were marginally *negatively* affected when they received ineffective motor training (non-sticky mittens), relative to no training, `r report(meta.findings, 3, 3, 2)`, and were unaffected when the actor wore a mitten, relative to no mitten `r report(meta.findings, 7, 3, 2)`, as reported in the main text.
-
 
 
 ## Exclusion info
@@ -1244,12 +1219,31 @@ hab.plot +
   theme(legend.position="none")
 ```
 
-**Figure S4.** Total looking time in seconds during habituation across Experiment 1-5. Error bars around means indicate bootstrapped 95% confidence intervals (CIs). Individual points indicate data from a single participant. Horizontal bars within boxes indicate medians, and boxes indicate the middle 2 quartiles of data. Violin plots in indicate distribution of data, area scaled proportionally to the number of observations. 
+**Figure S4.** Total looking time in seconds during habituation across Experiments 1-5. Error bars around means indicate bootstrapped 95% confidence intervals (CIs). Individual points indicate data from a single participant. Horizontal bars within boxes indicate medians, and boxes indicate the middle 2 quartiles of data. Violin plots in indicate distribution of data, area scaled proportionally to the number of observations.
 
 ***
 
+```{r hab.analysis}
 
-```{r habplot2, fig.width = 12, include = TRUE}
+# assessing effect of experimental manipulations on hab time
+op <- options(contrasts = c("contr.sum", "contr.poly"))
+hab1 <- lmer(total_hab ~ ageday + sex + first.test + hab + goal + clarity + causal + (1|experiment), data = filter(lumi.wide, paper == "LBS"), REML=FALSE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+hab.table <- gen.m(hab1)
+hab.ci <- gen.ci(hab1)[3:10,]
+
+hab1.beta <- lmer(scale(total_hab) ~ scale(ageday) + sex + first.test + hab + goal + clarity + causal + (1|experiment), data = filter(lumi.wide, paper == "LBS"), REML=FALSE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+hab.betas <- fixef(hab1.beta)
+
+hab.findings <- data.frame(cbind(hab.betas,hab.table,hab.ci))
+rownames(hab.findings) <- c("(Intercept)", "Age in Days", "Sex", "First Test Event", "Habituation", "Goal", "Clarity of hand", "Action on Contact")
+names(hab.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
+
+```
+
+To ask whether infants’ total attention during habituation was affected by experimental manipulations across Experiments 1-5 (action constrained vs unconstrained by a barrier, state change vs pickup goal, mittened, gloved, or bare-handed actor, and action with vs without contact with the object), and varied by gender and age, we fit a mixed effects model on these fixed effects and experiment (1-5) as a random intercept. We found that the only robust predictor of attention during habituation was age, `r report(hab.findings, 2, 3, 2)`, such that older infants looked for a shorter time overall than younger infants.
+
+
+```{r habplot2, eval=FALSE, include=FALSE}
 lumi.hab <- lumi.wide %>% filter(paper == "LBS") %>% gather(habtrial, look, H1:H12)
 lumi.hab$habtrial <- str_replace(lumi.hab$habtrial, "H", "")
 lumi.hab$habtrial <- as.numeric(lumi.hab$habtrial)
@@ -1263,44 +1257,22 @@ habplot2 +
   ylim(0, 45)+
   ylab("\n \n \n \n \n \n Looking Time (s)") +
   xlab("Habituation Trial (1-12)")+
-  facet_grid(~experiment+goal+hab+causal+mitten+stimuli)+
+  facet_grid(~experiment+goal+hab+causal+hand+stimuli)+
   theme_bw(15)+
   scale_colour_brewer(palette="Set1")+
   theme(legend.position="none")
 
-grid.text("Experiment", x = 0.08, y = 0.97)
-grid.text("Goal", x = 0.08, y = 0.94)
-grid.text("Action relative to barrier", x = 0.08, y = 0.91)
-grid.text("Action on contact", x = 0.08, y = 0.88)
-grid.text("Actor wearing mitten", x = 0.08, y = 0.85)
-grid.text("Displays", x = 0.08, y = 0.82)
 
 ```
 
-**Figure S5.** Looking time in seconds during each habituation trial across Experiments 1-5. Curves with 95% confidence interval ribbons indicate smoothed conditional means, generated using the loess method. Connected points indicate data from a single participant. Labels above each panel list the experiment name (Exp. 1-5), whether actions during habituation were constrained or unconstrained by a barrier, goal (state.change or pick.up), whether actions resulted in contact with the object, whether the actor wore a mitten, and video displays listed in Figure 1. 
-
-```{r hab.analysis}
-
-# assessing effect of experimental manipulations on hab time
-op <- options(contrasts = c("contr.sum", "contr.poly"))
-hab1 <- lmer(total_hab ~ ageday + sex + first.test + hab + goal + mitten + causal + (1|experiment), data = filter(lumi.wide, paper == "LBS"), REML=FALSE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
-hab.table <- gen.m(hab1)
-hab.ci <- gen.ci(hab1)[3:10,]
-
-hab1.beta <- lmer(scale(total_hab) ~ scale(ageday) + sex + first.test + hab + goal + mitten + causal + (1|experiment), data = filter(lumi.wide, paper == "LBS"), REML=FALSE, control=lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
-hab.betas <- fixef(hab1.beta)
-
-hab.findings <- data.frame(cbind(hab.betas,hab.table,hab.ci))
-rownames(hab.findings) <- c("(Intercept)", "Age in Days", "Sex", "First Test Event", "Habituation", "Goal", "Mitten", "Causal")
-names(hab.findings) <- c("beta", "b", "se", "df", "t", "p", "lower", "upper")
-
-```
+![**Figure S5.** Looking time in seconds during each habituation trial across Experiments 1-5. Curves with 95% confidence interval ribbons indicate smoothed conditional means, generated using the loess method. Connected points indicate data from a single participant. Labels above each panel list the experiment name (Exp. 1-5), whether actions during habituation were constrained or unconstrained by a barrier, goal (state.change or pick.up), whether actions resulted in contact with the object, whether the actor reached with a mittened, gloved, or bare hand, and video displays listed in Figure 1.](/Users/shariliu/Documents/HarvardLDS/Studies/LUMI/github/analyses/figS5_final.pdf)
 
 ***
 
-**Table S3** Regression table for mixed effects model analyzing the effect of age, sex, order of test events, habituation condition, goal, mitten, and causal information on total attention during habituation, controlling for variations across Experiments 1-5. Model formula: `total_hab ~ ageday + sex + first.test + hab + goal + mitten + causal + (1|experiment)`
+**Table S3** Regression table for mixed effects model analyzing the effect of age, sex, order of test events, habituation condition, goal, coverage of the hand, and causal information on total looking time habituation, controlling for other variations across Experiments 1-5. Model formula: `total_hab ~ ageday + sex + first.test + hab + goal + clarity + causal + (1|experiment)`.
+
 ```{r hab.table, include=TRUE}
 kable(hab.findings, col.names = c("Standardized Estimate (ß)", "Estimate (B)", "Standard Error (SE)", "df", "t", "p", "95% CI (Lower)", "95% CI (Upper)"))
 ```
 
-To ask whether infants’ total attention during habituation was affected by experimental manipulations across Experiment 1-5 (action constrained vs unconstrained by a barrier, state change vs pickup goal, mitten vs no mitten on actor, and action with vs without contact with the object), and varied by gender and age, we fit a mixed effects model on these fixed effects and experiment (Exp.1-5) as a random intercept. We found that the only robust predictor of attention during habituation was age, `r report(hab.findings, 2, 3, 2)`, such that older infants looked for a shorter time overall than younger infants.
+
