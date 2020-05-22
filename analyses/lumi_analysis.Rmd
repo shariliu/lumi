@@ -262,17 +262,17 @@ prop.tp
 
 
 ```{r figsingle, eval=FALSE, include=FALSE}
-fig2.single <- ggplot(data = dplyr::filter(lumi.raw.avg, experiment == "SCS.Exp.1"), aes(type, look, fill=type))
-fig2.single +
-  # geom_boxplot(outlier.colour = NA, alpha = .8)+
-  stat_summary(fun.y = mean, geom = "bar", colour="black") +
-  stat_summary(fun.y = mean, geom = "point", shape=21, size=3, position = "dodge", colour = "red", fill = "red") +
+fig2.SCS <- ggplot(data = dplyr::filter(lumi.raw.avg, paper == "SCS"), aes(type, look, fill=type))
+fig2.SCS +
+  geom_boxplot(outlier.colour = NA, alpha = .8)+
+  # stat_summary(fun.y = mean, geom = "bar", colour="black") +
   ylab("Looking Time (s)") +
   xlab("Test Event")+
   coord_cartesian(ylim = c(0, 40)) +
-  # geom_point(alpha = 0.5)+
-  # geom_line(alpha = 0.5, aes(group = subj_id))+
-  geom_errorbar(data = filter(summary.avg, experiment == "SCS.Exp.1"), size = 1, width = 0, colour = "red", aes(ymin=look-ci, ymax=look+ci)) +
+  geom_point(alpha = 0.3)+
+  geom_line(alpha = 0.3, aes(group = subj_id))+
+  geom_errorbar(data = filter(summary.avg, paper == "SCS"), size = 1, width = 0, colour = "red", aes(ymin=look-ci, ymax=look+ci)) +
+  stat_summary(fun.y = mean, geom = "point", shape=21, size=3, position = "dodge", colour = "red", fill = "red") +
   facet_grid(~experiment+goal+hab+causal+hand)+
   scale_x_discrete(labels = c("inefficient","efficient"))+
   theme_bw(14)+
